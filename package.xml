@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>baxter_data_acquisition</name>
+  <version>0.0.0</version>
+  <description>
+    Data acquisition with the baxter research robot for robot anomaly 
+    detection.
+  </description>
+
+  <maintainer email="ludersdorfer@fortiss.org">Marvin Ludersdorfer</maintainer>
+  <license>BSD</license>
+  <url type="repository">https://github.com/BRML/baxter_data_acquisition.git</url>
+  <author email="ludersdorfer@fortiss.org">Marvin Ludersdorfer</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>rospy</build_depend>
+  
+  <run_depend>rospy</run_depend>
+</package>
