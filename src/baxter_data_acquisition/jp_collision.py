@@ -85,8 +85,17 @@ class JointPosition(object):
         return True
 
     def execute(self):
+        print '\ndata %s collisions.' % ('with' if self._collisions
+                                         else 'without')
         self._limb.move_to_neutral()
+        for nr in range(self._number):
+            if rospy.is_shutdown():
+                break
+            print 'sample %i of %d.' % (nr + 1, self._number)
+            self._one_sample()
+        rospy.signal_shutdown('Done with experiment.')
 
+    def _one_sample(self):
         elapsed = 0.0
         start = rospy.get_time()
         while not rospy.is_shutdown() and elapsed < settings.run_time:
@@ -106,6 +115,7 @@ class JointPosition(object):
 
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.move_to_neutral()
+        return True
 
     @staticmethod
     def _nod():
