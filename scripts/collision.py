@@ -29,8 +29,20 @@ import argparse
 
 import rospy
 
+from baxter_data_acquisition.jp_collision import JointPosition
+
 
 def main():
+    """ (Manual) collision data acquisition with the baxter research robot.
+
+    Moves one limb through configurations randomly selected from a pre-defined
+    set of configurations. For each movement between two configurations there
+    is a probability that a collision is sampled to be due at a randomly
+    sampled part of the limb. In this case the operator is instructed to hit
+    the robot in the desired location.
+    One sample consists of a number of configurations; a data set consists of
+    a number of samples.
+    """
     parser = argparse.ArgumentParser(
             description='Record collision data on the baxter research robot.')
     required = parser.add_argument_group('required arguments')
@@ -51,7 +63,8 @@ def main():
     print 'Initializing node ...'
     rospy.init_node('collision_data', anonymous=True)
 
-    # Do collision data acquisition here.
+    jp = JointPosition(args.limb, args.number, args.collisions, args.images)
+    rospy.on_shutdown(jp.clean_shutdown)
 
     print 'Done.'
 

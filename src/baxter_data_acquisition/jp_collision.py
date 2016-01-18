@@ -23,10 +23,43 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import baxter_interface
+from baxter_interface import CHECK_VERSION
+
 
 class JointPosition(object):
-    def __init__(self, limb, number, collision, images):
+    def __init__(self, limb, number, collisions, images):
+        """ Joint position data acquisition with manual induced collisions.
+        :param limb: The limb to record data from.
+        :param number: The number of samples to record.
+        :param collisions: Whether there are collisions in the data.
+        :param images: Whether images are to be recorded.
+        :return: A baxter robot instance.
+        """
         self._arm = limb
         self._number = number
-        self._collision = collision
+        self._collisions = collisions
         self._images = images
+
+        self._limb = baxter_interface.Limb(self._arm)
+        self._camera = baxter_interface.CameraController('head_camera')
+
+        print "\nGetting robot state ... "
+        self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
+        self._init_state = self._rs.state().enabled
+        print "Enabling robot... "
+        self._rs.enable()
+
+        self._limb.set_joint_position_speed(0.3)
+        self._limb.move_to_neutral()
+
+    def clean_shutdown(self):
+        """ Clean shutdown of the robot.
+        :return: True on completion
+        """
+        print "\nExiting joint position collision daq ..."
+        self._limb.move_to_neutral()
+        if not self._init_state:
+            print "Disabling robot..."
+            self._rs.disable()
+        return True
