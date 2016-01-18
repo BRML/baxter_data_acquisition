@@ -42,6 +42,7 @@ from baxter_data_acquisition.sampler import CollisionSampler
 import baxter_data_acquisition.settings as settings
 
 from recorder.camera_recorder import CameraRecorder
+from recorder.joint_recorder import JointRecorder
 
 
 class JointPosition(object):
@@ -118,10 +119,12 @@ class JointPosition(object):
                 break
             print 'Recording sample %i of %d.' % (nr + 1, self._number)
 
-            self._rec_cam.start(outfile + '-%i' % nr,
-                                self._camera.fps, self._camera.resolution)
+            if self._images:
+                self._rec_cam.start(outfile + '-%i' % nr,
+                                    self._camera.fps, self._camera.resolution)
             self._one_sample()
-            self._rec_cam.stop()
+            if self._images:
+                self._rec_cam.stop()
 
         rospy.signal_shutdown('Done with experiment.')
 
@@ -134,8 +137,9 @@ class JointPosition(object):
         is selected at random, visualized on the head display, and the
         operator instructed to hit the pointed out body part as soon as
         possible by baxter nodding its head.
-        :return: True on completion.
+        :return: Joint data dictionary.
         """
+        data = dict()
         elapsed = 0.0
         start = rospy.get_time()
         while not rospy.is_shutdown() and elapsed < settings.run_time:
@@ -155,7 +159,7 @@ class JointPosition(object):
 
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.move_to_neutral()
-        return True
+        return data
 
     def _sample_configuration(self):
         """ Randomly selects one of the configurations stored in
