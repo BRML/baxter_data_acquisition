@@ -23,8 +23,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import numpy.random as rnd
+import os
+
+import rospkg
+import rospy
+
+from std_msgs.msg import Bool
+
 import baxter_interface
 from baxter_interface import CHECK_VERSION
+
+from baxter_data_acquisition.sampler import CollisionSampler
+import baxter_data_acquisition.settings as settings
+from baxter_data_acquisition.face import send_image
 
 
 class JointPosition(object):
@@ -44,22 +56,149 @@ class JointPosition(object):
         self._limb = baxter_interface.Limb(self._arm)
         self._camera = baxter_interface.CameraController('head_camera')
 
+        self._previous_config = None
+        if self._collisions:
+            self._sampler = CollisionSampler(settings.probability)
+        self._imgpath = os.path.join(rospkg.RosPack().
+                                     get_path('baxter_data_acquisition'),
+                                     'share', 'images')
+
         print "\nGetting robot state ... "
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
         self._init_state = self._rs.state().enabled
         print "Enabling robot... "
         self._rs.enable()
 
+        send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.set_joint_position_speed(0.3)
-        self._limb.move_to_neutral()
 
     def clean_shutdown(self):
         """ Clean shutdown of the robot.
         :return: True on completion
         """
         print "\nExiting joint position collision daq ..."
+        send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.move_to_neutral()
         if not self._init_state:
             print "Disabling robot..."
             self._rs.disable()
         return True
+
+    def execute(self):
+        self._limb.move_to_neutral()
+
+        elapsed = 0.0
+        start = rospy.get_time()
+        while not rospy.is_shutdown() and elapsed < settings.run_time:
+            cmd = self._sample_configuration()
+            if self._collisions:
+                if self._sampler.shall_collide():
+                    part = self._sampler.sample_body_part()
+                    print '\tInduce collision on %s arm at %s' % \
+                          (self._arm, part)
+                    self._nod()
+                    send_image(os.path.join(self._imgpath,
+                                            'hit_%s.png' % part))
+                else:
+                    send_image(os.path.join(self._imgpath, 'clear.png'))
+            self._limb.move_to_joint_positions(cmd)
+            elapsed = rospy.get_time() - start
+
+        send_image(os.path.join(self._imgpath, 'clear.png'))
+        self._limb.move_to_neutral()
+
+    @staticmethod
+    def _nod():
+        """ Nod baxter's head once. """
+        pub = rospy.Publisher('robot/head/command_head_nod', Bool,
+                              queue_size=10)
+        pub.publish(data=True)
+
+    def _sample_configuration(self):
+        """ Randomly selects one of the configurations stored in
+        self._configurations.
+        """
+        config = None
+        while True:
+            config = rnd.randint(0, 9)
+            if not config == self._previous_config:
+                break
+        self._previous_config = config
+        return self._configurations(config)
+
+    def _configurations(self, configuration):
+        """ Returns the desired configuration from the list of configurations.
+        :type configuration: int
+        :param configuration: The id of the configuration [0, 9].
+        """
+        configs = [{self._arm + '_w0': -0.15071361223754884,
+                    self._arm + '_w1': 1.1017816996398926,
+                    self._arm + '_w2': 0.059058260266113285,
+                    self._arm + '_e0': -1.5562235075317383,
+                    self._arm + '_e1': 1.948155598388672,
+                    self._arm + '_s0': -0.42798063933105474,
+                    self._arm + '_s1': -0.07363107773437501},
+                   {self._arm + '_w0': -0.2949078061340332,
+                    self._arm + '_w1': 0.9633399336914064,
+                    self._arm + '_w2': 0.388864129284668,
+                    self._arm + '_e0': -3.0349809853637697,
+                    self._arm + '_e1': 1.1198059738769532,
+                    self._arm + '_s0': 0.7804127249450684,
+                    self._arm + '_s1': -0.9127185677490235},
+                   {self._arm + '_w0': 2.319762443829346,
+                    self._arm + '_w1': -0.13575729957275393,
+                    self._arm + '_w2': 3.052621764404297,
+                    self._arm + '_e0': -0.1817767231567383,
+                    self._arm + '_e1': 0.779645734552002,
+                    self._arm + '_s0': -0.3179175179260254,
+                    self._arm + '_s1': 0.4613447214294434},
+                   {self._arm + '_w0': 0.16030099215087892,
+                    self._arm + '_w1': 1.3261263896118165,
+                    self._arm + '_w2': 1.0941117957092286,
+                    self._arm + '_e0': 0.4970097747070313,
+                    self._arm + '_e1': 1.4645681555603027,
+                    self._arm + '_s0': 1.234471037640381,
+                    self._arm + '_s1': 0.15186409782714844},
+                   {self._arm + '_w0': -1.6037769119018557,
+                    self._arm + '_w1': -0.2688301327697754,
+                    self._arm + '_w2': 2.1303158167419434,
+                    self._arm + '_e0': 0.44485442797851565,
+                    self._arm + '_e1': 1.6958157590698244,
+                    self._arm + '_s0': 0.898529245477295,
+                    self._arm + '_s1': -0.5794612419616699},
+                   {self._arm + '_w0': 0.22396119477539064,
+                    self._arm + '_w1': 0.6879903825805664,
+                    self._arm + '_w2': 3.0530052596008304,
+                    self._arm + '_e0': -1.1224904402526856,
+                    self._arm + '_e1': 0.8713010865234375,
+                    self._arm + '_s0': -1.1393642289001467,
+                    self._arm + '_s1': -0.3459126672729492},
+                   {self._arm + '_w0': -0.04333495720825196,
+                    self._arm + '_w1': 0.39193209085693365,
+                    self._arm + '_w2': 3.0537722499938966,
+                    self._arm + '_e0': -0.42222821138305666,
+                    self._arm + '_e1': 0.9763787703735353,
+                    self._arm + '_s0': -0.9840486743041993,
+                    self._arm + '_s1': 0.4103398602905274},
+                   {self._arm + '_w0': -0.45405831269531255,
+                    self._arm + '_w1': 1.5600584594970703,
+                    self._arm + '_w2': 2.744675121588135,
+                    self._arm + '_e0': -2.059752700579834,
+                    self._arm + '_e1': 1.7192089660583498,
+                    self._arm + '_s0': 0.04640291878051758,
+                    self._arm + '_s1': -0.3087136332092285},
+                   {self._arm + '_w0': -0.562587453314209,
+                    self._arm + '_w1': 2.0942672682678225,
+                    self._arm + '_w2': 1.9573594831054688,
+                    self._arm + '_e0': -1.8844953957641604,
+                    self._arm + '_e1': 1.7353157643127441,
+                    self._arm + '_s0': 0.10469418865356446,
+                    self._arm + '_s1': 0.11773302533569337},
+                   {self._arm + '_w0': 0.2439029449951172,
+                    self._arm + '_w1': 1.459582718005371,
+                    self._arm + '_w2': 3.0537722499938966,
+                    self._arm + '_e0': -0.10277671267089844,
+                    self._arm + '_e1': 1.5608254498901368,
+                    self._arm + '_s0': 1.5002332088378907,
+                    self._arm + '_s1': -0.04256796681518555}]
+        return configs[configuration]

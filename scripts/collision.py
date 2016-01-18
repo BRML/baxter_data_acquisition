@@ -65,6 +65,7 @@ def main():
 
     jp = JointPosition(args.limb, args.number, args.collisions, args.images)
     rospy.on_shutdown(jp.clean_shutdown)
+    jp.execute()
 
     print 'Done.'
 
