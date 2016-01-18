@@ -26,7 +26,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import datetime
+import os
 
+import rospkg
 import rospy
 
 from baxter_data_acquisition.jp_collision import JointPosition
@@ -58,16 +61,29 @@ def main():
     parser.add_argument('-i', '--images', required=False,
                         type=bool, default=False,
                         help='Whether images are to be recorded.')
+    parser.add_argument('-o', '--outfile', required=False,
+                        type=str, default='')
     args = parser.parse_args(rospy.myargv()[1:])
+
+    ns = rospkg.RosPack().get_path('baxter_data_acquisition')
+    datapath = os.path.join(ns, 'data')
+    if not os.path.exists(datapath):
+        os.makedirs(datapath)
+    if len(args.outfile) == 0:
+        now = datetime.datetime.now()
+        outfile = now.strftime("%Y%m%d%H%M")
+    else:
+        outfile = args.outfile
+    filename = os.path.join(datapath, outfile)
 
     print 'Initializing node ...'
     rospy.init_node('collision_data', anonymous=True)
 
     jp = JointPosition(args.limb, args.number, args.collisions, args.images)
     rospy.on_shutdown(jp.clean_shutdown)
-    jp.execute()
+    jp.execute(filename)
 
-    print 'Done.'
+    print '\nDone.'
 
 if __name__ == '__main__':
     main()

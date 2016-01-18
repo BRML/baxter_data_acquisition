@@ -3,7 +3,7 @@ from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup()
-d['packages'] = ['baxter_data_acquisition']
+d['packages'] = ['baxter_data_acquisition', 'recorder']
 d['package_dir'] = {'': 'src'}
 
 setup(**d)

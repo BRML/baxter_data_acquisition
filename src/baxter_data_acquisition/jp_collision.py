@@ -37,9 +37,11 @@ from std_msgs.msg import (
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
+from baxter_data_acquisition.face import send_image
 from baxter_data_acquisition.sampler import CollisionSampler
 import baxter_data_acquisition.settings as settings
-from baxter_data_acquisition.face import send_image
+
+from recorder.camera_recorder import CameraRecorder
 
 
 class JointPosition(object):
@@ -61,6 +63,9 @@ class JointPosition(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
+        self._pub_nod = rospy.Publisher('robot/head/command_head_nod', Bool,
+                                        queue_size=10)
+        self._rec_cam = CameraRecorder()
 
         self._previous_config = None
         if self._collisions:
@@ -78,6 +83,13 @@ class JointPosition(object):
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.set_joint_position_speed(0.3)
         self._pub_rate.publish(settings.recording_rate)
+        # Camera handling is one fragile thing...
+        try:
+            baxter_interface.CameraController('right_hand_camera').close()
+        except AttributeError:
+            pass
+        self._camera.resolution = (1280, 800)
+        self._camera.fps = 14
 
     def clean_shutdown(self):
         """ Clean shutdown of the robot.
@@ -93,15 +105,20 @@ class JointPosition(object):
             self._rs.disable()
         return True
 
-    def execute(self):
-        print '\ndata %s collisions.' % ('with' if self._collisions
-                                         else 'without')
+    def execute(self, outfile):
+        print '\nRecord data %s collisions into %s.' % \
+              ('with' if self._collisions else 'without', outfile)
         self._limb.move_to_neutral()
         for nr in range(self._number):
             if rospy.is_shutdown():
                 break
-            print 'sample %i of %d.' % (nr + 1, self._number)
+            print 'Recording sample %i of %d.' % (nr + 1, self._number)
+
+            self._rec_cam.start(outfile + '-%i' % nr,
+                                self._camera.fps, self._camera.resolution)
             self._one_sample()
+            self._rec_cam.stop()
+
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self):
@@ -124,7 +141,7 @@ class JointPosition(object):
                     part = self._sampler.sample_body_part()
                     print '\tInduce collision on %s arm at %s' % \
                           (self._arm, part)
-                    self._nod()
+                    self._pub_nod.publish(data=True)
                     send_image(os.path.join(self._imgpath,
                                             'hit_%s.png' % part))
                 else:
@@ -135,13 +152,6 @@ class JointPosition(object):
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.move_to_neutral()
         return True
-
-    @staticmethod
-    def _nod():
-        """ Nod baxter's head once. """
-        pub = rospy.Publisher('robot/head/command_head_nod', Bool,
-                              queue_size=10)
-        pub.publish(data=True)
 
     def _sample_configuration(self):
         """ Randomly selects one of the configurations stored in
