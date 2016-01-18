@@ -29,7 +29,10 @@ import os
 import rospkg
 import rospy
 
-from std_msgs.msg import Bool
+from std_msgs.msg import (
+    Bool,
+    UInt16
+)
 
 import baxter_interface
 from baxter_interface import CHECK_VERSION
@@ -56,6 +59,9 @@ class JointPosition(object):
         self._limb = baxter_interface.Limb(self._arm)
         self._camera = baxter_interface.CameraController('head_camera')
 
+        self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
+                                         UInt16, queue_size=10)
+
         self._previous_config = None
         if self._collisions:
             self._sampler = CollisionSampler(settings.probability)
@@ -71,6 +77,7 @@ class JointPosition(object):
 
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.set_joint_position_speed(0.3)
+        self._pub_rate.publish(settings.recording_rate)
 
     def clean_shutdown(self):
         """ Clean shutdown of the robot.
@@ -78,6 +85,8 @@ class JointPosition(object):
         """
         print "\nExiting joint position collision daq ..."
         send_image(os.path.join(self._imgpath, 'clear.png'))
+        self._limb.set_joint_position_speed(0.3)
+        self._pub_rate.publish(100.0)
         self._limb.move_to_neutral()
         if not self._init_state:
             print "Disabling robot..."
@@ -96,6 +105,16 @@ class JointPosition(object):
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self):
+        """ One sample with manually induced collisions.
+
+        Baxter moves one limb randomly between pre-defined configurations for
+        a given period of time. For each movement it is randomly selected
+        whether a collision (=anomaly) is due. If yes, a body part of the limb
+        is selected at random, visualized on the head display, and the
+        operator instructed to hit the pointed out body part as soon as
+        possible by baxter nodding its head.
+        :return: True on completion.
+        """
         elapsed = 0.0
         start = rospy.get_time()
         while not rospy.is_shutdown() and elapsed < settings.run_time:
