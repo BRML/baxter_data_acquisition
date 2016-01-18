@@ -106,6 +106,10 @@ class JointPosition(object):
         return True
 
     def execute(self, outfile):
+        """ Recording of collision data with the baxter research robot.
+        :param outfile: path and filename of the file(s) to write the data to,
+        without the extension(s).
+        """
         print '\nRecord data %s collisions into %s.' % \
               ('with' if self._collisions else 'without', outfile)
         self._limb.move_to_neutral()
