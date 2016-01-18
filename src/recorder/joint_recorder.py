@@ -27,19 +27,16 @@ import h5py
 
 
 class JointRecorder(object):
-    def __init__(self, outfile, limb, anomaly_mode='manual'):
+    def __init__(self, limb, anomaly_mode='manual'):
         """ Joint recorder class writing baxter joint data into a .hdf5 file,
         where the index gives the sample number, containing modalities
         ('configuration', 'effort', 'anomaly', 'acceleration') and their
         corresponding fields ('measured', 'commanded'), if appropriate.
-        :param outfile: Filename to write the data to, without the extension.
         :param limb: The limb to record data from ['left', 'right', 'both']
         :param anomaly_mode: Type of anomaly in the data ['manual',
         'automatic']
         :return: Joint recorder instance.
         """
-        self._filename = outfile + '.h5'
-
         self._header = dict()
         if limb == 'both':
             self._header['configuration'] = \
@@ -62,19 +59,34 @@ class JointRecorder(object):
         else:
             self._header['anomaly'] = ""
 
-    def write_sample(self, data):
-        """ Append data of one sample to the .hdf5 joint data file.
-        :param data: data dictionary to write into .hdf5 file.
+        self._filename = None
+        self._data = None
+
+    def start(self, outfile):
+        """ Start joint data recording.
+        :param outfile: Filename to write the data to, without the extension.
         """
+        self._filename = outfile + '.h5'
+        self._data = dict()
+
+    def stop(self):
+        """ Stop joint data recording. """
+        pass
+
+    def write_sample(self):
+        """ Append data of one sample to the .hdf5 joint data file. """
         with h5py.File(self._filename, 'a') as fp:
             idx = len(fp)
             g = fp.require_group('%i' % idx)
-            for modality in data:
+            for modality in self._data:
                 gm = g.require_group(modality)
-                for field in data[modality]:
+                for field in self._data[modality]:
                     gf = gm.require_dataset(field,
-                                            shape=data[modality][field].shape,
-                                            dtype=data[modality][field].dtype,
-                                            data=data[modality][field])
+                        shape=self._data[modality][field].shape,
+                        dtype=self._data[modality][field].dtype,
+                        data=self._data[modality][field])
                     gf.attrs.create('Header', data=self._header[modality])
         print 'Done writing sample data to file.'
+
+    def _cb_state(self, data):
+        pass

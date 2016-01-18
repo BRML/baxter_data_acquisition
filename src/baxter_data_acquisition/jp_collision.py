@@ -66,6 +66,7 @@ class JointPosition(object):
                                          UInt16, queue_size=10)
         self._pub_nod = rospy.Publisher('robot/head/command_head_nod', Bool,
                                         queue_size=10)
+        self._rec_joint = JointRecorder(self._arm, 'manual')
         self._rec_cam = CameraRecorder()
 
         self._previous_config = None
@@ -119,12 +120,15 @@ class JointPosition(object):
                 break
             print 'Recording sample %i of %d.' % (nr + 1, self._number)
 
+            self._rec_joint.start(outfile)
             if self._images:
                 self._rec_cam.start(outfile + '-%i' % nr,
                                     self._camera.fps, self._camera.resolution)
             self._one_sample()
             if self._images:
                 self._rec_cam.stop()
+            self._rec_joint.stop()
+            self._rec_joint.write_sample()
 
         rospy.signal_shutdown('Done with experiment.')
 
@@ -137,9 +141,8 @@ class JointPosition(object):
         is selected at random, visualized on the head display, and the
         operator instructed to hit the pointed out body part as soon as
         possible by baxter nodding its head.
-        :return: Joint data dictionary.
+        :return: True on completion.
         """
-        data = dict()
         elapsed = 0.0
         start = rospy.get_time()
         while not rospy.is_shutdown() and elapsed < settings.run_time:
@@ -159,7 +162,7 @@ class JointPosition(object):
 
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.move_to_neutral()
-        return data
+        return True
 
     def _sample_configuration(self):
         """ Randomly selects one of the configurations stored in
