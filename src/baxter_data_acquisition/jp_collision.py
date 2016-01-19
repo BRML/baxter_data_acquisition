@@ -166,7 +166,8 @@ class JointPosition(object):
                     self._pub_nod.publish(data=True)
                     send_image(os.path.join(self._imgpath,
                                             'hit_%s.png' % part))
-                    self._pub_anom.publish(data=[self._sampler.part2int(part),])
+                    self._pub_anom.publish(data=[self._sampler.part2int(part),
+                                                 ])
                 else:
                     send_image(os.path.join(self._imgpath, 'clear.png'))
             self._pub_cfg_des.publish(
