@@ -56,3 +56,15 @@ class CollisionSampler(object):
         """
         draw = rnd.randint(0, len(self._body_parts))
         return self._body_parts[draw]
+
+    def part2int(self, part):
+        """ Convert string representation of body part to int representation.
+        :param part: String representation of the body part.
+        :return: Int representation of the body part.
+        """
+        try:
+            ret = self._body_parts.index(part)
+        except ValueError:
+            print "ERROR-part2int-Requested part does not exist."
+            raise
+        return ret

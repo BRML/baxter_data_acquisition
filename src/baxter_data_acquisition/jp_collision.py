@@ -29,8 +29,10 @@ import os
 import rospkg
 import rospy
 
+from baxter_core_msgs.msg import JointCommand
 from std_msgs.msg import (
     Bool,
+    Float64MultiArray,
     UInt16
 )
 
@@ -66,12 +68,18 @@ class JointPosition(object):
                                          UInt16, queue_size=10)
         self._pub_nod = rospy.Publisher('robot/head/command_head_nod', Bool,
                                         queue_size=10)
-        self._rec_joint = JointRecorder(self._arm, 'manual')
+        self._pub_cfg_des = rospy.Publisher('data/cfg/des', JointCommand,
+                                            queue_size=10)
+        self._rec_joint = JointRecorder(limb=self._arm,
+                                        rate=settings.recording_rate,
+                                        anomaly_mode='manual')
         self._rec_cam = CameraRecorder()
 
         self._previous_config = None
         if self._collisions:
             self._sampler = CollisionSampler(settings.probability)
+            self._pub_anom = rospy.Publisher('data/anomaly', Float64MultiArray,
+                                             queue_size=10)
         self._imgpath = os.path.join(rospkg.RosPack().
                                      get_path('baxter_data_acquisition'),
                                      'share', 'images')
@@ -100,7 +108,7 @@ class JointPosition(object):
         print "\nExiting joint position collision daq ..."
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.set_joint_position_speed(0.3)
-        self._pub_rate.publish(100.0)
+        self._pub_rate.publish(100)
         self._limb.move_to_neutral()
         if not self._init_state:
             print "Disabling robot..."
@@ -115,21 +123,24 @@ class JointPosition(object):
         print '\nRecord data %s collisions into %s.' % \
               ('with' if self._collisions else 'without', outfile)
         self._limb.move_to_neutral()
-        for nr in range(self._number):
-            if rospy.is_shutdown():
-                break
-            print 'Recording sample %i of %d.' % (nr + 1, self._number)
+        try:
+            for nr in range(self._number):
+                if rospy.is_shutdown():
+                    break
+                print 'Recording sample %i of %d.' % (nr + 1, self._number)
 
-            self._rec_joint.start(outfile)
-            if self._images:
-                self._rec_cam.start(outfile + '-%i' % nr,
-                                    self._camera.fps, self._camera.resolution)
-            self._one_sample()
-            if self._images:
-                self._rec_cam.stop()
-            self._rec_joint.stop()
-            self._rec_joint.write_sample()
-
+                self._rec_joint.start(outfile)
+                if self._images:
+                    self._rec_cam.start(outfile + '-%i' % nr,
+                                        self._camera.fps,
+                                        self._camera.resolution)
+                self._one_sample()
+                if self._images:
+                    self._rec_cam.stop()
+                self._rec_joint.stop()
+                self._rec_joint.write_sample()
+        except rospy.ROSInterruptException:
+            pass
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self):
@@ -155,8 +166,11 @@ class JointPosition(object):
                     self._pub_nod.publish(data=True)
                     send_image(os.path.join(self._imgpath,
                                             'hit_%s.png' % part))
+                    self._pub_anom.publish(data=[self._sampler.part2int(part),])
                 else:
                     send_image(os.path.join(self._imgpath, 'clear.png'))
+            self._pub_cfg_des.publish(
+                command=[cmd[j] for j in self._rec_joint.get_header_cfg()[1:]])
             self._limb.move_to_joint_positions(cmd)
             elapsed = rospy.get_time() - start
 

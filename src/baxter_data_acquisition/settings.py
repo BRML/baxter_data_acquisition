@@ -32,4 +32,4 @@ run_time = 30.0
 probability = 0.15
 
 # recording rate [Hz]
-recording_rate = 500.0
+recording_rate = 500
