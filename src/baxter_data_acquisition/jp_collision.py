@@ -62,7 +62,12 @@ class JointPosition(object):
         self._images = images
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._camera = baxter_interface.CameraController('head_camera')
+        self._rec_joint = JointRecorder(limb=self._arm,
+                                        rate=settings.recording_rate,
+                                        anomaly_mode='manual')
+        if self._images:
+            self._camera = baxter_interface.CameraController('head_camera')
+            self._rec_cam = CameraRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
@@ -70,10 +75,6 @@ class JointPosition(object):
                                         queue_size=10)
         self._pub_cfg_des = rospy.Publisher('data/cfg/des', JointCommand,
                                             queue_size=10)
-        self._rec_joint = JointRecorder(limb=self._arm,
-                                        rate=settings.recording_rate,
-                                        anomaly_mode='manual')
-        self._rec_cam = CameraRecorder()
 
         self._previous_config = None
         if self._collisions:
@@ -93,13 +94,14 @@ class JointPosition(object):
         send_image(os.path.join(self._imgpath, 'clear.png'))
         self._limb.set_joint_position_speed(0.3)
         self._pub_rate.publish(settings.recording_rate)
-        # Camera handling is one fragile thing...
-        try:
-            baxter_interface.CameraController('right_hand_camera').close()
-        except AttributeError:
-            pass
-        self._camera.resolution = (1280, 800)
-        self._camera.fps = 14
+        if self._images:
+            # Camera handling is one fragile thing...
+            try:
+                baxter_interface.CameraController('right_hand_camera').close()
+            except AttributeError:
+                pass
+            self._camera.resolution = (1280, 800)
+            self._camera.fps = 14
 
     def clean_shutdown(self):
         """ Clean shutdown of the robot.
