@@ -68,3 +68,48 @@ class CollisionSampler(object):
             print "ERROR-part2int-Requested part does not exist."
             raise
         return ret
+
+
+class AnomalySampler(object):
+    def __init__(self, probability, p_mult, i_mult, d_mult):
+        """ Collection of functions for sampling anomalies with baxter.
+        :param probability: Probability that a collision takes place.
+        :param p_mult: Maximum multiplier value for P parameter.
+        :param i_mult: Maximum multiplier value for I parameter.
+        :param d_mult: Maximum multiplier value for D parameter.
+        :return: An anomaly sampler instance.
+        """
+        assert 0.0 <= probability <= 1.0, 'Probability not in [0, 1]'
+        self._probability = probability
+        self._p_mult = p_mult
+        self._i_mult = i_mult
+        self._d_mult = d_mult
+
+    def shall_anomaly(self):
+        """
+        Return whether an anomaly is supposed to happen or not. Has a
+        self._probability chance to return True.
+        ":return Whether an anomaly is due.
+        """
+
+        if rnd.uniform(0.0, 1.0) <= self._probability:
+            return True
+        return False
+
+    def sample_p_multiplier(self):
+        """ Sample a multiplicative modification for the P parameter.
+        :return: P modification
+        """
+        return rnd.uniform(0.0, 1.0)*self._p_mult
+
+    def sample_i_multiplier(self):
+        """ Sample a multiplicative modification for the I parameter.
+        :return: I modification
+        """
+        return rnd.uniform(0.0, 1.0)*self._i_mult
+
+    def sample_d_multiplier(self):
+        """ Sample a multiplicative modification for the D parameter.
+        :return: D modification
+        """
+        return rnd.uniform(0.0, 1.0)*self._d_mult
