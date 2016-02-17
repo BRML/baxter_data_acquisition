@@ -41,6 +41,8 @@ from baxter_interface import CHECK_VERSION
 
 from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
+from control.ipl_bb import BangBangInterpolator
+from control.pid import PID, DIRECT
 
 from recorder.camera_recorder import CameraRecorder
 from recorder.joint_recorder import JointRecorder
@@ -66,8 +68,18 @@ class JointPosition(object):
         self._threed = threed
 
         ns = rospkg.RosPack().get_path('baxter_data_acquisition')
-        config_file = os.path.join(ns, 'data', 'setup', 'configurations2.txt')
+        path = os.path.join(ns, 'data', 'setup')
+        if not os.path.exists(path):
+            os.makedirs(path)
+        config_file = os.path.join(path, 'configurations2.txt')
         self._configs = self._load_configurations(config_file)
+
+        path = os.path.join(ns, 'data', 'log')
+        if not os.path.exists(path):
+            os.makedirs(path)
+        log_file = os.path.join(path, 'bang_bang_log.txt')
+        self._ipl = BangBangInterpolator(limb=self._arm, scale_dq=0.4,
+                                         logfile=log_file)
 
         self._limb = baxter_interface.Limb(self._arm)
         self._rec_joint = JointRecorder(limb=self._arm,
@@ -179,11 +191,63 @@ class JointPosition(object):
                                                  a_mode, a_type])
                     # PID with anomalies
             else:
-                # PID without anomalies
-                pass
+                self._move_to_joint_positions()
 
         self._limb.move_to_neutral()
         return True
+
+    def _move_to_joint_positions(self, q_des, dq_des, kpid, tau_lim,
+                                 timeout=15.0):
+        q_curr = self._limb.joint_angles()
+        dq_curr = self._limb.joint_velocities()
+        count = 0
+        rate = rospy.Rate(settings.interpolator_rate)
+
+        """ Trajectory planning """
+        # TODO: compute duration
+        duration = 0.0 + settings.duration_offset
+        steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
+                                                    q_end=q_des,
+                                                    duration=duration,
+                                                    dq_start=dq_curr,
+                                                    dq_end=dq_des)
+
+        """ Trajectory execution """
+        if err == 0:
+            print "Planned trajectory is %i-dimensional and %i steps long." % \
+                  (steps.shape[1], steps.shape[0])
+
+            """ Set up PID controllers """
+            ctrl = dict()
+            for jn in q_des.keys():
+                ctrl[jn] = PID(kpid=kpid[jn], direction=DIRECT)
+                ctrl[jn].set_output_limits(minmax=tau_lim[jn])
+                print jn, ctrl[jn]
+
+            """ Do PID control """
+            t_elapsed = 0.0
+            t_start = rospy.get_time()
+            cmd = dict()
+            while (not rospy.is_shutdown() and
+                   count < steps.shape[0] and
+                   t_elapsed < timeout):
+                q_curr = self._limb.joint_angles()
+                dq_curr = self._limb.joint_velocities()
+
+                # TODO: implement
+
+                count += 1
+                rate.sleep()
+                t_elapsed = rospy.get_time()-t_start
+            if count >= steps.shape[0]:
+                print "Arrived at desired configuration."
+            if t_elapsed > timeout:
+                print "Motion timed out."
+            return True
+        return False
+
+    def _move_to_joint_positions_anomaly(self):
+        pass
 
     @staticmethod
     def _load_configurations(filename):

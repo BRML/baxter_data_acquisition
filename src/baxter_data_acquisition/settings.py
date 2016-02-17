@@ -37,55 +37,96 @@ recording_rate = 500
 # run time per trial [s]
 run_time = 30.0
 
-
 """ 'Anomaly' parameters """
-
-
-def kpid(limb):
-    """
-    PID controller parameters for each joint.
-    :type limb: string
-    :param limb: which limb <left, right>
-    :return: Dictionary of joint name keys to pid parameter triples
-    """
-    if limb not in ['left', 'right']:
-        raise ValueError("Only defined for 'left' and 'right' limb!")
-    k = dict()
-    k[limb + '_s0'] = (19.0, 0.0, 15.0)
-    k[limb + '_s1'] = (25.0, 0.0, 16.0)
-    k[limb + '_e0'] = (17.0, 0.0, 3.0)
-    k[limb + '_e1'] = (7.0, 0.0, 2.0)
-    k[limb + '_w0'] = (9.0, 0.2, 2.0)
-    k[limb + '_w1'] = (6.0, 0.05, 2.0)
-    k[limb + '_w2'] = (3.0, 0.05, 0.8)
-    return k
 
 # PID parameters modification limits
 pid_mod = {'P': 3.535, 'I': 3.535, 'D': 3.535}
 
+# number of anomalous steps, commanded at interpolator_rate
+anomal_iters = 75
 
-def tau_max(limb):
-    """
-    Maximum applicable torque per joint [Nm].
-    :type limb: string
-    :param limb: which limb <left, right>
-    :return: Dictionary of joint name keys to torque limit tuples
-    """
-    if limb not in ['left', 'right']:
-        raise ValueError("Only defined for 'left' and 'right' limb!")
-    factor = 0.05  # 0.03
-    t = dict()
-    t[limb + '_s0'] = (-50.0 * factor, 50.0 * factor)
-    t[limb + '_s1'] = (-50.0 * factor, 50.0 * factor)
-    t[limb + '_e0'] = (-50.0 * factor, 50.0 * factor)
-    t[limb + '_e1'] = (-50.0 * factor, 50.0 * factor)
-    t[limb + '_w0'] = (-15.0 * factor, 15.0 * factor)
-    t[limb + '_w1'] = (-15.0 * factor, 15.0 * factor)
-    t[limb + '_w2'] = (-15.0 * factor, 15.0 * factor)
-    return t
 
 # interpolator frequency [Hz]
 interpolator_rate = 150
 
-# number of anomalous steps, commanded at interpolator_rate
-anomal_iters = 75
+# interpolator duration offset [s]
+duration_offset = 0.5  # 2.95
+
+
+def joint_names(limb):
+    """ Get a list of joints in a given limb.
+    :param limb: Which limb <left, right>
+    :return: list of joint names
+    """
+    if limb not in ['left', 'right']:
+        raise ValueError("Only defined for 'left' and 'right' limb!")
+    return [limb+'_'+jn for jn in ['s0', 's1', 'e0', 'e1', 'w0', 'w1', 'w2']]
+
+
+def q_lim(limb):
+    """ Get joint angle limits per joint [rad] for a given limb.
+    :param limb: Which limb <left, right>
+    :return: Dictionary of joint name keys to angle limit tuples
+    """
+    values = [(-1.70167993878, 1.70167993878), (-2.147, 1.047),
+              (-3.05417993878, 3.05417993878), (-0.05, 2.618),
+              (-3.059, 3.059), (-1.57079632679, 2.094), (-3.059, 3.059)]
+    return {a: b for a, b in zip(joint_names(limb), values)}
+
+
+def dq_lim(limb, scale=0.4):
+    """ Get joint velocity limits per joint [rad/s] for a given limb.
+    :type limb: string
+    :param limb: Which limb <left, right>
+    :param scale: Percentage of max value to apply [0, 1]
+    :return: Dictionary of joint name keys to maximum joint velocity tuples
+    """
+    if not 0.0 <= scale <= 1.0:
+        raise ValueError("Scale must be in [0, 1]!")
+    values = [(-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5),
+              (-4.0, 4.0), (-4.0, 4.0), (-4.0, 4.0)]
+    values = [tuple([v*scale for v in val]) for val in values]
+    return {a: b for a, b in zip(joint_names(limb), values)}
+
+
+def ddq_lim(limb):
+    """ Get joint acceleration limits per joint [rad/s^2] for a given limb.
+    :type limb: string
+    :param limb: Which limb <left, right>
+    :return: Dictionary of joint name keys to maximum joint acceleration
+    tuples
+    """
+    values = [(-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0),
+              (-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0)]
+    return {a: b for a, b in zip(joint_names(limb), values)}
+
+
+""" PID control parameters """
+
+
+def kpid(limb):
+    """ PID controller parameters for each joint.
+    :type limb: string
+    :param limb: Which limb <left, right>
+    :return: Dictionary of joint name keys to pid parameter triples
+    """
+    values = [(19.0, 0.0, 15.0), (25.0, 0.0, 16.0),
+              (17.0, 0.0, 3.0), (7.0, 0.0, 2.0),
+              (9.0, 0.2, 2.0), (6.0, 0.05, 2.0), (3.0, 0.05, 0.8)]
+    return {a: b for a, b in zip(joint_names(limb), values)}
+
+
+def tau_lim(limb, scale=0.2):
+    """ Maximum applicable torque per joint [Nm].
+    :type limb: string
+    :param limb: which limb <left, right>
+    :param scale: Percentage of max value to apply [0, 1]
+    :return: Dictionary of joint name keys to torque limit tuples
+    """
+    if not 0.0 <= scale <= 1.0:
+        raise ValueError("Scale must be in [0, 1]!")
+    values = [(-50.0, 50.0), (-50.0, 50.0),
+              (-50.0, 50.0), (-50.0, 50.0),
+              (-15.0, 15.0), (-15.0, 15.0), (-15.0, 15.0)]
+    values = [tuple([v*scale for v in val]) for val in values]
+    return {a: b for a, b in zip(joint_names(limb), values)}
