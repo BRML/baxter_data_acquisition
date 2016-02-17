@@ -26,10 +26,22 @@
 
 """ Data recording settings """
 
-# run time per trial [s]
-run_time = 30.0
 # probability for collision/anomaly [0, 1]
 probability = 0.15
 
 # recording rate [Hz]
 recording_rate = 500
+
+""" 'Collision' parameters """
+
+# run time per trial [s]
+run_time = 30.0
+
+
+""" 'Anomaly' parameters """
+
+# PID parameters
+pid_mod = {'P': 3.535, 'I': 3.535, 'D': 3.535}
+
+# number of anomalous steps, commanded at a rate of 150 Hz
+anomal_iters = 75

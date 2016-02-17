@@ -32,6 +32,8 @@ import os
 import rospkg
 import rospy
 
+from baxter_data_acquisition.jp_anomaly import JointPosition
+
 
 def main():
     """ (Automated) anomaly data acquisition with the baxter research robot.
@@ -92,7 +94,11 @@ def main():
     print 'Initializing node ...'
     rospy.init_node('anomaly_data', anonymous=True)
 
-    # Do anomaly data acquisition here.
+    jp = JointPosition(limb=args.limb, experiment=args.experiment,
+                       number=args.number, anomalies=args.anomalies,
+                       images=args.images, threed=args.threed)
+    rospy.on_shutdown(jp.clean_shutdown)
+    # jp.execute(filename)
 
     print '\nDone.'
 
