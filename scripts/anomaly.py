@@ -26,11 +26,33 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import datetime
+import os
 
+import rospkg
 import rospy
 
 
 def main():
+    """ (Automated) anomaly data acquisition with the baxter research robot.
+
+    A robotic arm is moved between 10 (pseudo-)random poses in Cartesian space in
+    a position-controlled manner. To this end, a trajectory between the current
+    configuration of the arm and the next desired configuration (corresponding to
+    the next desired pose) is computed in a bang-bang-approach (That is, constant
+    acceleration from current configuration; motion with constant velocity;
+    constant deceleration to end at desired configuration), where acceleration,
+    deceleration and constant velocity are chosen such that the desired
+    configuration is met in a given desired duration (in seconds), yielding S-
+    shaped trajectory segments in joint space. From the seven joints of the
+    robotic arm the second wrist joint (w2) is excluded from the PID controller.
+
+    For each of the ten segments of motion (between the 10 poses) there is a chance
+    of 15% that an anomaly occurs. Such an anomaly is induced by multiplying the P,
+    I and D parameters of the PID controller of one of the joints (sampled at
+    random) with independently sampled values from the interval [0, 3.535] for a
+    period of 0.5 seconds, returning to the normal P, I and D values afterwards.
+    """
     parser = argparse.ArgumentParser(
             description='Record anomaly data on the baxter research robot.')
     required = parser.add_argument_group('required arguments')
@@ -52,14 +74,27 @@ def main():
     parser.add_argument('-t', '--threed', required=False,
                         type=bool, default=False,
                         help='Whether 3d point clouds are to be recorded.')
+    parser.add_argument('-o', '--outfile', required=False,
+                        type=str, default='')
     args = parser.parse_args(rospy.myargv()[1:])
+
+    ns = rospkg.RosPack().get_path('baxter_data_acquisition')
+    datapath = os.path.join(ns, 'data')
+    if not os.path.exists(datapath):
+        os.makedirs(datapath)
+    if len(args.outfile) == 0:
+        now = datetime.datetime.now()
+        outfile = now.strftime("%Y%m%d%H%M")
+    else:
+        outfile = args.outfile
+    filename = os.path.join(datapath, outfile)
 
     print 'Initializing node ...'
     rospy.init_node('anomaly_data', anonymous=True)
 
     # Do anomaly data acquisition here.
 
-    print 'Done.'
+    print '\nDone.'
 
 if __name__ == '__main__':
     main()
