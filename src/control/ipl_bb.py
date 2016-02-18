@@ -24,7 +24,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
-import rospy
 
 from baxter_data_acquisition import settings
 from ipl import JointInterpolatedTrajectory
@@ -112,14 +111,14 @@ class BangBangInterpolator(JointInterpolatedTrajectory):
         if not 0.0 <= t1 <= t2:
             s = 'something is wrong:', '0.00s <= %.2fs <= %.2fs <= %.2fs' % \
                 (t1, t2, T)
-            rospy.logwarn(s)
+            self.dbg_msg(s)
             return 0, 0, -1
 
         if not ddqm[0] <= ddq <= ddqm[1]:
             s = ('required acceleration is out of bounds: ' +
                  '-%.2frad/s^2 <= %.2frad/s^2 <= %.2frad/s^2' %
                  (ddqm[0], ddq, ddqm[1]))
-            rospy.logwarn(s)
+            self.dbg_msg(s)
             return 0, 0, -1
 
         t = np.linspace(0, T, np.ceil(T*settings.interpolator_rate),

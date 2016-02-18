@@ -30,7 +30,7 @@ from baxter_data_acquisition import settings
 
 
 class JointInterpolatedTrajectory(object):
-    def __init__(self, limb, scale_dq=0.4, logfile=None):
+    def __init__(self, limb, scale_dq=0.4, logfile=None, debug=True):
         """ 'Trajectory' refers to a time history of position, velocity, and
         acceleration for each degree of freedom. In joint space, these are
         described as functions of joint angles. Each joint motion can be
@@ -42,9 +42,13 @@ class JointInterpolatedTrajectory(object):
         :param limb: Which limb <left, right>.
         :param scale_dq: Scaling factor for joint velocity limits.
         :param logfile: Name of the file to write logfile to, if desired.
+        :param debug: Whether to print debug messages to the screen.
         """
         self._arm = limb
         self._logfile = logfile
+        self._debug = debug
+        if self._debug:
+            import rospy
         self._dq_lim = settings.dq_lim(self._arm, scale=scale_dq)
         self._ddq_lim = settings.ddq_lim(self._arm)
 
@@ -61,6 +65,10 @@ class JointInterpolatedTrajectory(object):
         ds = np.zeros((1, 7))
         err = 0
         return s, ds, err
+
+    def dbg_msg(self, text):
+        if self._debug:
+            rospy.logwarn(text)
 
     def test(self):
         """ Test interpolator by visual inspection. """
