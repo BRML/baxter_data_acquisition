@@ -42,7 +42,7 @@ from baxter_interface import CHECK_VERSION
 from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
 from control.ipl_bb import BangBangInterpolator
-from control.pid import PID, DIRECT
+from control.pid import PidController, DIRECT
 
 from recorder.camera_recorder import CameraRecorder
 from recorder.joint_recorder import JointRecorder
@@ -216,11 +216,12 @@ class JointPosition(object):
         if err == 0:
             print "Planned trajectory is %i-dimensional and %i steps long." % \
                   (steps.shape[1], steps.shape[0])
+            jns = settings.joint_names(self._arm)
 
             """ Set up PID controllers """
             ctrl = dict()
             for jn in q_des.keys():
-                ctrl[jn] = PID(kpid=kpid[jn], direction=DIRECT)
+                ctrl[jn] = PidController(kpid=kpid[jn], direction=DIRECT)
                 ctrl[jn].set_output_limits(minmax=tau_lim[jn])
                 print jn, ctrl[jn]
 
@@ -233,9 +234,11 @@ class JointPosition(object):
                    t_elapsed < timeout):
                 q_curr = self._limb.joint_angles()
                 dq_curr = self._limb.joint_velocities()
-
-                # TODO: implement
-
+                for jn in q_des.keys():
+                    idx = jns.index(jn)
+                    cmd[jn] = ctrl[jn].compute(q_curr[jn], steps[count][idx],
+                                               dq_curr[jn])
+                self._limb.set_joint_torques(cmd)
                 count += 1
                 rate.sleep()
                 t_elapsed = rospy.get_time()-t_start
