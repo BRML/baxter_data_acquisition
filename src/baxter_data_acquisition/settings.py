@@ -52,6 +52,9 @@ interpolator_rate = 150
 # interpolator duration offset [s]
 duration_offset = 0.5  # 2.95
 
+# interpolator maximum joint velocity scale
+dq_scale = 0.4
+
 
 def joint_names(limb):
     """ Get a list of joints in a given limb.
