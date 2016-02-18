@@ -98,7 +98,7 @@ def main():
                        number=args.number, anomalies=args.anomalies,
                        images=args.images, threed=args.threed)
     rospy.on_shutdown(jp.clean_shutdown)
-    # jp.execute(filename)
+    jp.execute(filename)
 
     print '\nDone.'
 
