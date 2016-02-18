@@ -96,6 +96,10 @@ class JointPosition(object):
                                          UInt16, queue_size=10)
         self._pub_cfg_des = rospy.Publisher('data/cfg/des', JointCommand,
                                             queue_size=10)
+        self._pub_cfg_comm = rospy.Publisher('/data/cfg/comm', JointCommand,
+                                             queue_size=10)
+        self._pub_efft_gen = rospy.Publisher('/data/efft/gen', JointCommand,
+                                             queue_size=10)
 
         self._previous_config = None
         if self._anomalies:
@@ -238,13 +242,22 @@ class JointPosition(object):
                     idx = jns.index(jn)
                     cmd[jn] = ctrl[jn].compute(q_curr[jn], steps[count][idx],
                                                dq_curr[jn])
+
+                command = [steps[count][jns.index(jn)]
+                           for jn in self._rec_joint.get_header_cfg()[1:]]
+                self._pub_cfg_comm.publish(command=command)
+                command = [ctrl[jn].generated
+                           for jn in self._rec_joint.get_header_efft()[1:]]
+                self._pub_efft_gen.publish(command=command)
+
                 self._limb.set_joint_torques(cmd)
+
                 count += 1
                 rate.sleep()
                 t_elapsed = rospy.get_time()-t_start
             if count >= steps.shape[0]:
                 print "Arrived at desired configuration."
-            if t_elapsed > timeout:
+            if t_elapsed >= timeout:
                 print "Motion timed out."
             return True
         return False
