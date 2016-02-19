@@ -25,9 +25,9 @@
 
 import numpy as np
 import os
-
 import rospkg
 import rospy
+from tf import transformations
 
 from baxter_core_msgs.msg import JointCommand
 from std_msgs.msg import (
@@ -43,7 +43,7 @@ from baxter_data_acquisition.misc import set_dict
 from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
 from control.ipl_bb import BangBangInterpolator
-# from control.hdl_pose import PoseHandler
+from control.hdl_pose import PoseHandler
 from control.hdl_config import ConfigurationHandler
 from control.hdl_duration import DurationHandler
 from control.pid import PidController, DIRECT
@@ -75,8 +75,8 @@ class JointPosition(object):
         path = os.path.join(ns, 'data', 'setup')
         if not os.path.exists(path):
             os.makedirs(path)
-        # pose_file = os.path.join(path, 'poses2.txt')
-        # self._poses = PoseHandler(file_name=pose_file)
+        pose_file = os.path.join(path, 'poses2.txt')
+        self._poses = PoseHandler(file_name=pose_file)
         config_file = os.path.join(path, 'configurations2.txt')
         self._configs = ConfigurationHandler(file_name=config_file)
         duration_file = os.path.join(path, 'durations2.txt')
@@ -191,7 +191,7 @@ class JointPosition(object):
         """
         idxs = self._select_configurations()
         jns = settings.joint_names(self._arm)
-        zeros = set_dict(self._arm, *(0,)*7)
+        zeros = set_dict(self._arm, *(0.0,)*7)
         kpid = settings.kpid(self._arm)
         tau_lim = settings.tau_lim(self._arm, scale=0.2)
         for idx in idxs:
@@ -215,10 +215,11 @@ class JointPosition(object):
                                                           tau_lim=tau_lim,
                                                           anomaly_pars=anomaly_pars,
                                                           timeout=10.0)
-            else:
-                self._move_to_joint_positions(des_idx=idx, dq_des=zeros,
-                                              kpid=kpid, tau_lim=tau_lim,
-                                              timeout=10.0)
+                    continue
+            self._move_to_joint_positions(des_idx=idx, dq_des=zeros,
+                                          kpid=kpid, tau_lim=tau_lim,
+                                          timeout=10.0)
+            # self._limb.move_to_joint_positions(q_des)
 
         self._limb.move_to_neutral()
         return True
@@ -247,8 +248,10 @@ class JointPosition(object):
         q_des = {a: b for a, b in zip(jns, self._configs[des_idx])}
         # here using closest configuration for look-up of required duration;
         # maybe closest pose makes more sense?
-        closest_idx = self._configs.get_closest_config([q_curr[jn]
-                                                        for jn in jns])
+        x_curr = self._endpoint_pose()
+        closest_idx = self._poses.get_closest_pose(pose=x_curr)
+        # closest_idx = self._configs.get_closest_config([q_curr[jn]
+        #                                                 for jn in jns])
         duration = self._durations.get_duration(closest_idx, des_idx)
         duration += settings.duration_offset
         steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
@@ -267,7 +270,6 @@ class JointPosition(object):
             for jn in q_curr.keys():
                 ctrl[jn] = PidController(kpid=kpid[jn], direction=DIRECT)
                 ctrl[jn].set_output_limits(minmax=tau_lim[jn])
-                print jn, ctrl[jn]
 
             """ Do PID control """
             t_elapsed = 0.0
@@ -328,8 +330,10 @@ class JointPosition(object):
         q_des = {a: b for a, b in zip(jns, self._configs[des_idx])}
         # here using closest configuration for look-up of required duration;
         # maybe closest pose makes more sense?
-        closest_idx = self._configs.get_closest_config([q_curr[jn]
-                                                        for jn in jns])
+        x_curr = self._endpoint_pose()
+        closest_idx = self._poses.get_closest_pose(pose=x_curr)
+        # closest_idx = self._configs.get_closest_config([q_curr[jn]
+        #                                                 for jn in jns])
         duration = self._durations.get_duration(closest_idx, des_idx)
         duration += settings.duration_offset
         steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
@@ -353,16 +357,12 @@ class JointPosition(object):
                 anomaly_iters = settings.anomal_iters
             anomaly_start = np.random.randint(low=margin,
                                               high=steps.shape[0]-anomaly_iters)
-            kp_backup = kpid[joint][0]
-            ki_backup = kpid[joint][1]
-            kd_backup = kpid[joint][2]
 
             """ Set up PID controllers """
             ctrl = dict()
             for jn in q_curr.keys():
                 ctrl[jn] = PidController(kpid=kpid[jn], direction=DIRECT)
                 ctrl[jn].set_output_limits(minmax=tau_lim[jn])
-                print jn, ctrl[jn]
 
             """ Do PID control """
             t_elapsed = 0.0
@@ -376,16 +376,13 @@ class JointPosition(object):
 
                 """ Anomaly execution """
                 if count == anomaly_start:
-                    kpid[joint][0] *= pm
-                    kpid[joint][1] *= im
-                    kpid[joint][2] *= dm
-                    ctrl[joint].set_paramters(kpid=kpid[joint])
+                    kp_mod = kpid[joint][0]*pm
+                    ki_mod = kpid[joint][1]*im
+                    kd_mod = kpid[joint][2]*dm
+                    ctrl[joint].set_parameters(kp=kp_mod, ki=ki_mod, kd=kd_mod)
                 elif anomaly_start < count < anomaly_start+anomaly_iters:
                     self._pub_anom.publish(data=anomaly_pars)
                 elif count == anomaly_start+anomaly_iters:
-                    kpid[joint][0] = kp_backup
-                    kpid[joint][1] = ki_backup
-                    kpid[joint][2] = kd_backup
                     ctrl[joint].set_parameters(kpid=kpid[joint])
 
                 for jn in q_curr.keys():
@@ -411,6 +408,15 @@ class JointPosition(object):
                 print "Motion timed out."
             return True
         return False
+
+    def _endpoint_pose(self):
+        """ Current pose of the wrist of one arm of the baxter robot.
+        :return: pose [x, y, z, a, b, c]
+        """
+        qp = self._limb.endpoint_pose()
+        r = transformations.euler_from_quaternion(qp['orientation'])
+        return [qp['position'][0], qp['position'][1], qp['position'][2],
+                r[0], r[1], r[2]]
 
     def _select_configurations(self):
         """ Select 10 configurations from the list of configurations.

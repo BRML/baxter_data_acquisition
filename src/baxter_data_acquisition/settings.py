@@ -53,7 +53,7 @@ interpolator_rate = 150
 duration_offset = 0.5  # 2.95
 
 # interpolator maximum joint velocity scale
-dq_scale = 0.4
+dq_scale = 1.0  # 0.4
 
 
 def joint_names(limb):
@@ -86,8 +86,10 @@ def dq_lim(limb, scale=0.4):
     """
     if not 0.0 <= scale <= 1.0:
         raise ValueError("Scale must be in [0, 1]!")
-    values = [(-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5),
-              (-4.0, 4.0), (-4.0, 4.0), (-4.0, 4.0)]
+    # values = [(-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5),
+    #           (-4.0, 4.0), (-4.0, 4.0), (-4.0, 4.0)]
+    values = [(-.75, .75), (-.75, .75), (-.75, .75), (-.75, .75),
+              (-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)]
     values = [tuple([v*scale for v in val]) for val in values]
     return {a: b for a, b in zip(joint_names(limb), values)}
 
