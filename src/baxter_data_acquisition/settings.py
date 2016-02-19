@@ -40,7 +40,7 @@ run_time = 30.0
 """ 'Anomaly' parameters """
 
 # PID parameters modification limits
-pid_mod = {'P': 3.535, 'I': 3.535, 'D': 3.535}
+pid_mod = {'p_mult': 3.535, 'i_mult': 3.535, 'd_mult': 3.535}
 
 # number of anomalous steps, commanded at interpolator_rate
 anomal_iters = 75
