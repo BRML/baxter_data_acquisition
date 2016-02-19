@@ -51,7 +51,7 @@ class PoseHandler(PoseConfigDuration):
         if not isinstance(pose, list) and len(pose) != 6:
             raise ValueError("Pose must be a list with 6 entries!")
         try:
-            err = map(lambda x: np.sum(x**2, axis=1), self._data - pose)
+            err = map(lambda x: np.sum(x**2), self._data - pose)
         except Exception:
             raise
         err = np.asarray(err)

@@ -53,7 +53,7 @@ class ConfigurationHandler(PoseConfigDuration):
         if not isinstance(config, list) and len(config) != 7:
             raise ValueError("Configuration must be a list with 7 entries!")
         try:
-            err = map(lambda x: np.sum(abs(x), axis=1), self._data - config)
+            err = map(lambda x: np.sum(abs(x)), self._data - config)
         except Exception:
             raise
         err = np.asarray(err)
