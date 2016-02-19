@@ -109,14 +109,14 @@ class BangBangInterpolator(JointInterpolatedTrajectory):
             t2 = swap
 
         if not 0.0 <= t1 <= t2:
-            s = 'something is wrong:', '0.00s <= %.2fs <= %.2fs <= %.2fs' % \
-                (t1, t2, T)
+            s = ('something is wrong: ' +
+                 '0.00s <= %.2fs <= %.2fs <= %.2fs' % (t1, t2, T))
             self.dbg_msg(s)
             return 0, 0, -1
 
         if not ddqm[0] <= ddq <= ddqm[1]:
             s = ('required acceleration is out of bounds: ' +
-                 '-%.2frad/s^2 <= %.2frad/s^2 <= %.2frad/s^2' %
+                 '%.2frad/s^2 <= %.2frad/s^2 <= %.2frad/s^2' %
                  (ddqm[0], ddq, ddqm[1]))
             self.dbg_msg(s)
             return 0, 0, -1
