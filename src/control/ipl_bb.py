@@ -44,11 +44,12 @@ class BangBangInterpolator(JointInterpolatedTrajectory):
         :param dq_end: Dictionary of joint name keys to end joint velocities.
         :return: (steps, d_steps, err)
         """
-        s = None
-        ds = None
+        length = int(np.ceil(duration*settings.interpolator_rate))
+        s = np.zeros((length, len(q_start)))
+        ds = np.zeros((length, len(q_start)))
         err = 0
 
-        for jn in settings.joint_names(self._arm):
+        for idx, jn in enumerate(settings.joint_names(self._arm)):
 
             if self._logfile:
                 with open(self._logfile, 'a') as fp:
@@ -56,27 +57,18 @@ class BangBangInterpolator(JointInterpolatedTrajectory):
 
             # turn off w2, otherwise duration will grow ridiculously long
             if jn == self._arm+'_w2':
-                length = int(np.ceil(duration*settings.interpolator_rate))
-                ss, dss, err = np.zeros((length, 1)), np.zeros((length, 1)), 0
+                # no need to do anything, since already filled with 0s
                 if self._logfile:
                     with open(self._logfile, 'a') as fp:
                         fp.write('\n')
             else:
-                ss, dss, err = self._one_dof(T=duration,
-                                             q0=q_start[jn], qT=q_end[jn],
-                                             dq0=dq_start[jn], dqT=dq_end[jn],
-                                             dqm=self._dq_lim[jn],
-                                             ddqm=self._ddq_lim[jn])
+                s[:, idx], ds[:, idx], err = \
+                    self._one_dof(T=duration, q0=q_start[jn], qT=q_end[jn],
+                                  dq0=dq_start[jn], dqT=dq_end[jn],
+                                  dqm=self._dq_lim[jn], ddqm=self._ddq_lim[jn])
             if err == -1:
                 return (np.zeros((1, len(q_start))),
                         np.zeros((1, len(q_start))), err)
-
-            if s is None:
-                s = ss
-                ds = dss
-            else:
-                s = np.concatenate((s, ss), axis=1)
-                ds = np.concatenate((ds, dss), axis=1)
 
         if self._logfile:
             with open(self._logfile, 'a') as fp:
@@ -136,5 +128,5 @@ class BangBangInterpolator(JointInterpolatedTrajectory):
                                                            t2**2 -
                                                            2*(t1+t2)*tt)])
 
-        return (np.asarray(q).reshape((-1, 1)),
-                np.asarray(dq).reshape((-1, 1)), 0)
+        return (np.squeeze(np.asarray(q).reshape((-1, 1))),
+                np.squeeze(np.asarray(dq).reshape((-1, 1))), 0)
