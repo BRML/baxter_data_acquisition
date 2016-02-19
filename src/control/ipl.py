@@ -24,6 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
+import rospy
 
 from baxter_data_acquisition.misc import set_dict
 from baxter_data_acquisition import settings
@@ -47,8 +48,6 @@ class JointInterpolatedTrajectory(object):
         self._arm = limb
         self._logfile = logfile
         self._debug = debug
-        if self._debug:
-            import rospy
         self._dq_lim = settings.dq_lim(self._arm, scale=scale_dq)
         self._ddq_lim = settings.ddq_lim(self._arm)
 
