@@ -28,7 +28,6 @@
 import argparse
 import datetime
 import os
-
 import rospkg
 import rospy
 
@@ -55,8 +54,9 @@ def main():
     random) with independently sampled values from the interval [0, 3.535] for a
     period of 0.5 seconds, returning to the normal P, I and D values afterwards.
     """
-    parser = argparse.ArgumentParser(
-            description='Record anomaly data on the baxter research robot.')
+    arg_fmt = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(formatter_class=arg_fmt,
+                                     description=main.__doc__)
     required = parser.add_argument_group('required arguments')
     required.add_argument('-l', '--limb', required=True,
                           choices=['left', 'right'],

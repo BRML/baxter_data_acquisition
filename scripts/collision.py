@@ -28,7 +28,6 @@
 import argparse
 import datetime
 import os
-
 import rospkg
 import rospy
 
@@ -46,8 +45,9 @@ def main():
     One sample consists of a number of configurations; a data set consists of
     a number of samples.
     """
-    parser = argparse.ArgumentParser(
-            description='Record collision data on the baxter research robot.')
+    arg_fmt = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(formatter_class=arg_fmt,
+                                     description=main.__doc__)
     required = parser.add_argument_group('required arguments')
     required.add_argument('-l', '--limb', required=True,
                           choices=['left', 'right'],
