@@ -26,13 +26,36 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-
 import rospy
 
 
 def main():
-    parser = argparse.ArgumentParser(
-            description='Record handshake data on the baxter research robot.')
+    """ (Semi-manual) Data acquisition for handshake-scenario.
+
+    We regard a handshake-scenario between a robot and a human as the simplest
+    example of a collaborative task without an object being involved. We wish
+    to transform the available (visual) information about the (human) arm into
+    a common frame with the (known) robotic arm. That is, learning in this
+    case involves (at least) two stages:
+    1. Match external and internal information about the controlled (robotic)
+       arm.
+    2. Match external information about the second ('not controlled' robotic
+    or human) arm.
+
+    To this end, we devise the following experiment and record the following
+    data. Two hands---either two robotic arms or one robotic and one human
+    arm---move repeatedly from the outside toward the inside, 'meeting' at
+    some point, indicating (or performing, in case of the second arm being a
+    human arm) a handshake. We record three types of data:
+    - The internal state of the robotic arm(s).
+    - Visual (3d) information from a time-of-flight (TOF) camera mounted on
+      the head of the robot, giving a 'egocentric' view of the scene.
+    - Visual (RGB and 3d) information from a Kinect V2 sensor standing in
+      front of the robot, giving a external view of the scene.
+    """
+    arg_fmt = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(formatter_class=arg_fmt,
+                                     description=main.__doc__)
     required = parser.add_argument_group('required arguments')
     required.add_argument('-l', '--limb', required=True,
                           choices=['left', 'right'],
