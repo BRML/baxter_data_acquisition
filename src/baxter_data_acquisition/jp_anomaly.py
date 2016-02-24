@@ -199,6 +199,7 @@ class JointPosition(object):
             command = [q_des[jn]
                        for jn in self._rec_joint.get_header_cfg()[1:]]
             self._pub_cfg_des.publish(command=command)
+            anomaly_pars = None
             if self._anomalies:
                 if self._sampler.shall_anomaly():
                     pm = self._sampler.sample_p_multiplier()
@@ -209,15 +210,9 @@ class JointPosition(object):
                     a_mode = 1  # 1-'Control', 2-'Feedback'
                     a_type = 0  # 0-'Modified', 1-'Removed'
                     anomaly_pars = [pm, im, dm, add, joint_id, a_mode, a_type]
-                    self._move_to_joint_positions_anomaly(des_idx=idx,
-                                                          dq_des=zeros,
-                                                          kpid=kpid,
-                                                          tau_lim=tau_lim,
-                                                          anomaly_pars=anomaly_pars,
-                                                          timeout=10.0)
-                    continue
             self._move_to_joint_positions(des_idx=idx, dq_des=zeros,
                                           kpid=kpid, tau_lim=tau_lim,
+                                          anomaly_pars=anomaly_pars,
                                           timeout=10.0)
             # self._limb.move_to_joint_positions(q_des)
 
@@ -225,87 +220,7 @@ class JointPosition(object):
         return True
 
     def _move_to_joint_positions(self, des_idx, dq_des, kpid, tau_lim,
-                                 timeout=15.0):
-        """ (Blocking) PID control of robot limb.
-        :param des_idx: Index of desired target configuration in list of
-        configurations.
-        :param dq_des: Dictionary of joint name keys to desired target
-        velocities.
-        :param kpid: Dictionary of joint name keys to PID control parameter
-        triples.
-        :param tau_lim: Dictionary of joint name keys to joint torque limit
-        tuples.
-        :param timeout: Timeout for motion in [s].
-        :return: Boolean <True, False> on completion.
-        """
-        q_curr = self._limb.joint_angles()
-        dq_curr = self._limb.joint_velocities()
-        count = 0
-        rate = rospy.Rate(settings.interpolator_rate)
-
-        """ Trajectory planning """
-        jns = settings.joint_names(self._arm)
-        q_des = {a: b for a, b in zip(jns, self._configs[des_idx])}
-        # here using closest configuration for look-up of required duration;
-        # maybe closest pose makes more sense?
-        x_curr = self._endpoint_pose()
-        closest_idx = self._poses.get_closest_pose(pose=x_curr)
-        # closest_idx = self._configs.get_closest_config([q_curr[jn]
-        #                                                 for jn in jns])
-        duration = self._durations.get_duration(closest_idx, des_idx)
-        duration += settings.duration_offset
-        steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
-                                                    q_end=q_des,
-                                                    duration=duration,
-                                                    dq_start=dq_curr,
-                                                    dq_end=dq_des)
-
-        """ Trajectory execution """
-        if err == 0:
-            print "Planned trajectory is %i-dimensional and %i steps long." % \
-                  (steps.shape[1], steps.shape[0])
-
-            """ Set up PID controllers """
-            ctrl = dict()
-            for jn in q_curr.keys():
-                ctrl[jn] = PidController(kpid=kpid[jn], direction=DIRECT)
-                ctrl[jn].set_output_limits(minmax=tau_lim[jn])
-
-            """ Do PID control """
-            t_elapsed = 0.0
-            t_start = rospy.get_time()
-            cmd = dict()
-            while (not rospy.is_shutdown() and
-                   count < steps.shape[0] and
-                   t_elapsed < timeout):
-                q_curr = self._limb.joint_angles()
-                dq_curr = self._limb.joint_velocities()
-                for jn in q_curr.keys():
-                    idx = jns.index(jn)
-                    cmd[jn] = ctrl[jn].compute(q_curr[jn], steps[count][idx],
-                                               dq_curr[jn])
-
-                command = [steps[count][jns.index(jn)]
-                           for jn in self._rec_joint.get_header_cfg()[1:]]
-                self._pub_cfg_comm.publish(command=command)
-                command = [ctrl[jn].generated
-                           for jn in self._rec_joint.get_header_efft()[1:]]
-                self._pub_efft_gen.publish(command=command)
-
-                self._limb.set_joint_torques(cmd)
-
-                count += 1
-                rate.sleep()
-                t_elapsed = rospy.get_time()-t_start
-            if count >= steps.shape[0]:
-                print "Arrived at desired configuration."
-            if t_elapsed >= timeout:
-                print "Motion timed out."
-            return True
-        return False
-
-    def _move_to_joint_positions_anomaly(self, des_idx, dq_des, kpid, tau_lim,
-                                         anomaly_pars, timeout=15.0):
+                                 anomaly_pars=None, timeout=15.0):
         """ (Blocking) PID control of robot limb with anomalies.
         :param des_idx: Index of desired target configuration in list of
         configurations.
@@ -316,7 +231,9 @@ class JointPosition(object):
         :param tau_lim: Dictionary of joint name keys to joint torque limit
         tuples.
         :param anomaly_pars: Anomaly parameters
-        [pm, im, dm, add, joint_id, a_mode, a_type].
+        [pm, im, dm, add, joint_id, a_mode, a_type] or None. If None, no
+        anomaly is generated, otherwise an anomaly is introduced according
+        to the passed parameters.
         :param timeout: Timeout for motion in [s].
         :return: Boolean <True, False> on completion.
         """
@@ -344,19 +261,20 @@ class JointPosition(object):
 
         """ Trajectory execution """
         if err == 0:
-            print "Planned trajectory is %i-dimensional and %i steps long." % \
-                  (steps.shape[1], steps.shape[0])
+            print ("Planned trajectory is %i-dimensional and %i steps long." %
+                   (steps.shape[1], steps.shape[0]))
 
-            """ Set up anomalies """
-            pm, im, dm, _, joint_id, _, _ = anomaly_pars
-            joint = jns[joint_id]
-            margin = 10
-            if settings.anomal_iters + 2*margin > steps.shape[0]:
-                anomaly_iters = steps.shape[0] - 2*margin
-            else:
-                anomaly_iters = settings.anomal_iters
-            anomaly_start = np.random.randint(low=margin,
-                                              high=steps.shape[0]-anomaly_iters)
+            if anomaly_pars is not None:
+                """ Set up anomalies """
+                pm, im, dm, _, joint_id, _, _ = anomaly_pars
+                joint = jns[joint_id]
+                margin = 10
+                if settings.anomal_iters + 2*margin > steps.shape[0]:
+                    anomaly_iters = steps.shape[0] - 2*margin
+                else:
+                    anomaly_iters = settings.anomal_iters
+                anomaly_start = np.random.randint(low=margin,
+                                                  high=steps.shape[0]-anomaly_iters)
 
             """ Set up PID controllers """
             ctrl = dict()
@@ -374,16 +292,18 @@ class JointPosition(object):
                 q_curr = self._limb.joint_angles()
                 dq_curr = self._limb.joint_velocities()
 
-                """ Anomaly execution """
-                if count == anomaly_start:
-                    kp_mod = kpid[joint][0]*pm
-                    ki_mod = kpid[joint][1]*im
-                    kd_mod = kpid[joint][2]*dm
-                    ctrl[joint].set_parameters(kp=kp_mod, ki=ki_mod, kd=kd_mod)
-                elif anomaly_start < count < anomaly_start+anomaly_iters:
-                    self._pub_anom.publish(data=anomaly_pars)
-                elif count == anomaly_start+anomaly_iters:
-                    ctrl[joint].set_parameters(kpid=kpid[joint])
+                if anomaly_pars is not None:
+                    """ Anomaly execution """
+                    if count == anomaly_start:
+                        kp_mod = kpid[joint][0]*pm
+                        ki_mod = kpid[joint][1]*im
+                        kd_mod = kpid[joint][2]*dm
+                        ctrl[joint].set_parameters(kp=kp_mod, ki=ki_mod,
+                                                   kd=kd_mod)
+                    elif anomaly_start < count < anomaly_start+anomaly_iters:
+                        self._pub_anom.publish(data=anomaly_pars)
+                    elif count == anomaly_start+anomaly_iters:
+                        ctrl[joint].set_parameters(kpid=kpid[joint])
 
                 for jn in q_curr.keys():
                     idx = jns.index(jn)
