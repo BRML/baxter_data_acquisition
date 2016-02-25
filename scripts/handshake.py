@@ -69,9 +69,6 @@ def main():
     parser.add_argument('-n', '--number', required=False,
                         type=int, default=1,
                         help='The number of samples to record.')
-    parser.add_argument('-i', '--images', required=False,
-                        type=bool, default=False,
-                        help='Whether images are to be recorded.')
     parser.add_argument('-t', '--threed', required=False,
                         type=bool, default=False,
                         help='Whether 3d point clouds are to be recorded.')
