@@ -62,7 +62,8 @@ def main():
                         type=bool, default=False,
                         help='Whether images are to be recorded.')
     parser.add_argument('-o', '--outfile', required=False,
-                        type=str, default='')
+                        type=str, default='',
+                        help='Recorded data filename (without extension).')
     args = parser.parse_args(rospy.myargv()[1:])
 
     ns = rospkg.RosPack().get_path('baxter_data_acquisition')
