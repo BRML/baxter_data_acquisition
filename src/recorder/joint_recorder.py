@@ -104,11 +104,12 @@ class JointRecorder(object):
         self._sub_acc = rospy.Subscriber('/robot/accelerometer/' + self._arm +
                                          '_accelerometer/state', Imu,
                                          self._cb_acc, queue_size=1)
-        self._sub_anom = rospy.Subscriber('/data/anomaly', Float64MultiArray,
+        ns = 'data/limb/' + self._arm
+        self._sub_anom = rospy.Subscriber(ns + '/anomaly', Float64MultiArray,
                                           self._cb_anom, queue_size=1)
-        self._sub_cfg_comm = rospy.Subscriber('/data/cfg/comm', JointCommand,
+        self._sub_cfg_comm = rospy.Subscriber(ns + '/cfg/comm', JointCommand,
                                               self._cb_cfg_comm, queue_size=1)
-        self._sub_cfg_des = rospy.Subscriber('/data/cfg/des', JointCommand,
+        self._sub_cfg_des = rospy.Subscriber(ns + '/cfg/des', JointCommand,
                                              self._cb_cfg_des, queue_size=1)
         self._sub_state = rospy.Subscriber('/robot/joint_states', JointState,
                                            self._cb_state, queue_size=1)
@@ -116,7 +117,7 @@ class JointRecorder(object):
                                                '/joint_command', JointCommand,
                                                self._cb_efft_comm,
                                                queue_size=1)
-        self._sub_efft_gen = rospy.Subscriber('/data/efft/gen', JointCommand,
+        self._sub_efft_gen = rospy.Subscriber(ns + '/efft/gen', JointCommand,
                                               self._cb_efft_gen, queue_size=1)
 
     def stop(self):
@@ -204,7 +205,7 @@ class JointRecorder(object):
         """ Return anomaly data header.
         :return: Anomaly data header.
         """
-        if self._anomaly_mode is 'manual':
+        if self._anomaly_mode == 'manual':
             header = self._header['anomaly']
             header[1] = re.sub('\(.*?\)', '', header[1]).strip()
             return header

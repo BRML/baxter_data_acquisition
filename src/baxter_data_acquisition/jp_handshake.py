@@ -76,9 +76,12 @@ class JointPosition(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
-        # TODO: make distinction for 'left' and 'right' arm
-        self._pub_cfg_des = rospy.Publisher('data/cfg/des', JointCommand,
-                                            queue_size=10)
+        s = 'data/limb/' + self._arm_robot + '/cfg/des'
+        self._pub_cfg_des_robot = rospy.Publisher(s, JointCommand,
+                                                  queue_size=10)
+        s = 'data/limb/' + self._arm_human + '/cfg/des'
+        self._pub_cfg_des_human = rospy.Publisher(s, JointCommand,
+                                                  queue_size=10)
 
         print "\nGetting robot state ... "
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
@@ -87,6 +90,7 @@ class JointPosition(object):
         self._rs.enable()
 
         self._limb_robot.set_joint_position_speed(0.3)
+        self._limb_human.set_joint_position_speed(0.3)
         self._pub_rate.publish(settings.recording_rate)
 
     def clean_shutdown(self):
@@ -95,8 +99,10 @@ class JointPosition(object):
         """
         print "\nExiting joint position handshake daq ..."
         self._limb_robot.set_joint_position_speed(0.3)
+        self._limb_human.set_joint_position_speed(0.3)
         self._pub_rate.publish(100)
         self._limb_robot.move_to_neutral()
+        self._limb_human.move_to_neutral()
         if not self._init_state:
             print "Disabling robot..."
             self._rs.disable()
@@ -106,6 +112,9 @@ class JointPosition(object):
         """ Recording of handshake data with the baxter research robot.
         :param outfile: path and filename of the file(s) to write the data to,
         without the extension(s).
+        :param mode: A string defining which set of configurations to select.
+        Can be one of <'normal', 'occluded1', 'occluded2'> if self._experiment
+        is 'r-r', or one of <'robot', 'human'> if self._experiment is 'r-h'.
         """
         print '\nRecord handshake data into %s.' % outfile
         self._limb_robot.move_to_neutral()
@@ -143,35 +152,53 @@ class JointPosition(object):
         Baxter moves two limbs in a velocity-controlled sine-wave or one limb
         from an outer- toward an inner configuration and vice versa,
         depending on self._experiment.
+        :param mode: A string defining which set of configurations to select.
+        Can be one of <'normal', 'occluded1', 'occluded2'> if self._experiment
+        is 'r-r', or one of <'robot', 'human'> if self._experiment is 'r-h'.
         :return: True on completion.
         """
         if self._experiment == 'r-r':
+            """ The robot-robot-handshake. The two limbs are moved to a
+            previously defined starting configuration and are then moved in a
+            velocity-controlled sinusoidal movement for a given period of
+            time.
+            """
             cmd_robot, cmd_human = self._get_r_r_configurations(mode)
 
             command = [cmd_robot[jn]
                        for jn in self._rec_joint_robot.get_header_cfg()[1:]]
-            # TODO: use robot publisher
-            self._pub_cfg_des.publish(command=command)
+            self._pub_cfg_des_robot.publish(command=command)
             self._limb_robot.move_to_joint_positions(cmd_robot)
 
             command = [cmd_human[jn]
                        for jn in self._rec_joint_human.get_header_cfg()[1:]]
-            # TODO: use human publisher
-            self._pub_cfg_des.publish(command=command)
+            self._pub_cfg_des_human.publish(command=command)
             self._limb_human.move_to_joint_positions(cmd_human)
 
             self._wobble()
+            self._limb_human.move_to_neutral()
         else:  # self._experiment == 'r-h'
+            """ The robot-human-handshake. If 'mode' is 'robot', the second
+            robotic limb is used as a placeholder for the human limb.
+            Otherwise it is not moved at all.
+            The robotic limb is moved in a periodic fashion for a given
+            period of time between previously defined outer- and inner
+            configurations, simulating a handshake (if 'mode' is 'robot') or
+            being grasped by the human hand otherwise.
+            """
             cmd_in, cmd_out = self._get_r_h_configurations()
             if mode == 'robot':
-                cmd_human = set_dict(self._limb_human,
+                cmd_human = set_dict(self._arm_human,
                                      -0.11, 0.40, 1.29, 1.62,
                                      -0.19, 0.82, 1.28)
                 command = [cmd_human[jn]
                            for jn in self._rec_joint_human.get_header_cfg()[1:]]
-                # TODO: use human publisher
-                self._pub_cfg_des.publish(command=command)
+                self._pub_cfg_des_human.publish(command=command)
                 self._limb_human.move_to_joint_positions(cmd_human)
+            elif mode == 'human':
+                pass
+            else:
+                raise ValueError('No such configuration!')
 
             flag_out = False
             elapsed = 0.0
@@ -183,11 +210,13 @@ class JointPosition(object):
                     cmd = cmd_out
                 command = [cmd[jn]
                            for jn in self._rec_joint_robot.get_header_cfg()[1:]]
-                # TODO: use robot publisher
-                self._pub_cfg_des.publish(command=command)
+                self._pub_cfg_des_robot.publish(command=command)
                 self._limb_robot.move_to_joint_positions(cmd)
                 flag_out = not flag_out
                 elapsed = rospy.get_time() - start
+
+            if mode == 'robot':
+                self._limb_human.move_to_neutral()
 
         self._limb_robot.move_to_neutral()
         return True
@@ -205,8 +234,8 @@ class JointPosition(object):
         jns_human = settings.joint_names(self._arm_human)
 
         def make_v_func():
-            """
-            returns a randomly parametrized cosine function to control a
+            """ Create a randomly parametrized cosine function.
+            :return: A randomly parametrized cosine function to control a
             specific joint.
             """
             period_factor = rnd.uniform(0.3, 0.5)
@@ -220,6 +249,11 @@ class JointPosition(object):
         v_funcs = [make_v_func() for _ in jns_robot]
 
         def make_cmd(joint_names, elapsed):
+            """ Create joint velocity command.
+            :param joint_names: list of joint names.
+            :param elapsed: elapsed time in [s].
+            :return: Dictionary of joint name keys to joint velocity commands
+            """
             return {jn: v_funcs[i](elapsed)
                     for i, jn in enumerate(joint_names)}
 
