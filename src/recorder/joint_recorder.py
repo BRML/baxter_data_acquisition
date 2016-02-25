@@ -38,7 +38,7 @@ from std_msgs.msg import Float64MultiArray
 
 
 class JointRecorder(object):
-    def __init__(self, limb, rate, anomaly_mode='manual'):
+    def __init__(self, limb, rate, anomaly_mode='none'):
         """ Joint recorder class writing baxter joint data into a .hdf5 file,
         where the index gives the sample number, containing modalities
         ('configuration', 'effort', 'anomaly', 'acceleration') and their
@@ -46,7 +46,7 @@ class JointRecorder(object):
         :param limb: The limb to record data from ['left', 'right'].
         :param rate: The desired recording rate.
         :param anomaly_mode: Type of anomaly in the data ['manual',
-        'automatic'].
+        'automatic', 'none'].
         :return: Joint recorder instance.
         """
         self._header = dict()
@@ -58,15 +58,17 @@ class JointRecorder(object):
         self._header['acceleration'] = ['time', limb + '_x',
                                         limb + '_y', limb + '_z']
         self._header['effort'] = self._header['configuration']
-        if anomaly_mode is 'manual':
+        if anomaly_mode == 'manual':
             self._header['anomaly'] = ['time',
                                        "partId (0-shoulder, 1-s1, "
                                        "2-upper arm, 3-e1, 4-lower arm, "
                                        "5-w1, 6-palm, 7-w2)"]
-        else:
+        elif anomaly_mode == 'automatic':
             self._header['anomaly'] = ['time', 'P multiplier',
                                        'I multiplier', 'D multiplier',
                                        'additive', 'jointId', 'mode', 'type']
+        else:
+            self._header['anomaly'] = ['', ]
         self._arm = limb
         self._rate = rospy.Rate(rate)
         self._anomaly_mode = anomaly_mode

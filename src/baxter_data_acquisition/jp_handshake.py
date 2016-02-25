@@ -63,15 +63,12 @@ class JointPosition(object):
         self._number = number
         self._threed = threed
 
-        # TODO: remove 'anomaly_mode' in JointRecorder for this experiment
         self._limb_robot = baxter_interface.Limb(self._arm_robot)
         self._rec_joint_robot = JointRecorder(limb=self._arm_robot,
-                                              rate=settings.recording_rate,
-                                              anomaly_mode='manual')
+                                              rate=settings.recording_rate)
         self._limb_human = baxter_interface.Limb(self._arm_human)
         self._rec_joint_human = JointRecorder(limb=self._arm_human,
-                                              rate=settings.recording_rate,
-                                              anomaly_mode='manual')
+                                              rate=settings.recording_rate)
         if self._threed:
             # TODO: set up Kinect recorder instance here
             # TODO: set up RealSense recorder instance here
