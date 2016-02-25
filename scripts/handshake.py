@@ -102,7 +102,7 @@ def main():
     rospy.on_shutdown(jp.clean_shutdown)
     jp.execute(outfile=filename, mode=args.mode)
 
-    print 'Done.'
+    print '\nDone.'
 
 if __name__ == '__main__':
     main()
