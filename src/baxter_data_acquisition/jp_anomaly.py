@@ -48,8 +48,10 @@ from control.hdl_config import ConfigurationHandler
 from control.hdl_duration import DurationHandler
 from control.pid import PidController, DIRECT
 
-from recorder.camera_recorder import CameraRecorder
-from recorder.joint_recorder import JointRecorder
+from recorder import (
+    CameraRecorder,
+    JointRecorder
+)
 
 
 class JointPosition(object):
