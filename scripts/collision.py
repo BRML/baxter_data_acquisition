@@ -28,7 +28,6 @@
 import argparse
 import datetime
 import os
-
 import rospkg
 import rospy
 
@@ -79,7 +78,8 @@ def main():
     print 'Initializing node ...'
     rospy.init_node('collision_data', anonymous=True)
 
-    jp = JointPosition(args.limb, args.number, args.collisions, args.images)
+    jp = JointPosition(limb=args.limb, number=args.number,
+                       collisions=args.collisions, images=args.images)
     rospy.on_shutdown(jp.clean_shutdown)
     jp.execute(filename)
 
