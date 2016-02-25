@@ -108,19 +108,20 @@ class JointPosition(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
-        self._pub_cfg_des = rospy.Publisher('data/cfg/des', JointCommand,
+        ns = 'data/limb/' + self._arm
+        self._pub_cfg_des = rospy.Publisher(ns + '/cfg/des', JointCommand,
                                             queue_size=10)
-        self._pub_cfg_comm = rospy.Publisher('/data/cfg/comm', JointCommand,
+        self._pub_cfg_comm = rospy.Publisher(ns + '/cfg/comm', JointCommand,
                                              queue_size=10)
-        self._pub_efft_gen = rospy.Publisher('/data/efft/gen', JointCommand,
+        self._pub_efft_gen = rospy.Publisher(ns + '/efft/gen', JointCommand,
                                              queue_size=10)
 
         self._previous_config = None
         if self._anomalies:
             self._sampler = AnomalySampler(settings.probability,
                                            **settings.pid_mod)
-            self._pub_anom = rospy.Publisher('data/anomaly', Float64MultiArray,
-                                             queue_size=10)
+            self._pub_anom = rospy.Publisher(ns + '/anomaly',
+                                             Float64MultiArray, queue_size=10)
 
         print "\nGetting robot state ... "
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
