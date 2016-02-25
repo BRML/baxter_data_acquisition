@@ -42,12 +42,15 @@ from baxter_interface import CHECK_VERSION
 from baxter_data_acquisition.misc import set_dict
 from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
-from control.ipl_bb import BangBangInterpolator
-from control.hdl_pose import PoseHandler
-from control.hdl_config import ConfigurationHandler
-from control.hdl_duration import DurationHandler
-from control.pid import PidController, DIRECT
 
+from control import (
+    PidController,
+    PID_DIRECT,
+    BangBangInterpolator,
+    PoseHandler,
+    ConfigurationHandler,
+    DurationHandler
+)
 from recorder import (
     CameraRecorder,
     JointRecorder
@@ -282,7 +285,7 @@ class JointPosition(object):
             """ Set up PID controllers """
             ctrl = dict()
             for jn in q_curr.keys():
-                ctrl[jn] = PidController(kpid=kpid[jn], direction=DIRECT)
+                ctrl[jn] = PidController(kpid=kpid[jn], direction=PID_DIRECT)
                 ctrl[jn].set_output_limits(minmax=tau_lim[jn])
 
             """ Do PID control """
