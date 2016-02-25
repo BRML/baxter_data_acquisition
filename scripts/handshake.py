@@ -31,6 +31,8 @@ import os
 import rospkg
 import rospy
 
+from baxter_data_acquisition.jp_handshake import JointPosition
+
 
 def main():
     """ (Semi-manual) Data acquisition for handshake-scenario.
@@ -66,6 +68,10 @@ def main():
     required.add_argument('-e', '--experiment', required=True,
                           choices=['r-r', 'r-h'],
                           help='Robot-robot or robot-human handshake.')
+    required.add_argument('-m', '--mode', required=True,
+                          choices=['normal', 'occluded1', 'occluded2',
+                                   'robot', 'human'],
+                          help='The set of configurations to select.')
     parser.add_argument('-n', '--number', required=False,
                         type=int, default=1,
                         help='The number of samples to record.')
@@ -91,7 +97,10 @@ def main():
     print 'Initializing node ...'
     rospy.init_node('handshake_data', anonymous=True)
 
-    # Do handshake data acquisition here.
+    jp = JointPosition(limb=args.limb, experiment=args.experiment,
+                       number=args.number, threed=args.threed)
+    rospy.on_shutdown(jp.clean_shutdown)
+    jp.execute(outfile=filename, mode=args.mode)
 
     print 'Done.'
 
