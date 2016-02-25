@@ -40,7 +40,7 @@ from baxter_interface import CHECK_VERSION
 from baxter_data_acquisition.misc import set_dict
 import baxter_data_acquisition.settings as settings
 
-from recorder.joint_recorder import JointRecorder
+from recorder import JointRecorder
 
 
 class JointPosition(object):

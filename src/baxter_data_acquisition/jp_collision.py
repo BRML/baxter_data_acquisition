@@ -25,7 +25,6 @@
 
 import numpy.random as rnd
 import os
-
 import rospkg
 import rospy
 
@@ -43,8 +42,10 @@ from baxter_data_acquisition.face import send_image
 from baxter_data_acquisition.sampler import CollisionSampler
 import baxter_data_acquisition.settings as settings
 
-from recorder.camera_recorder import CameraRecorder
-from recorder.joint_recorder import JointRecorder
+from recorder import (
+    CameraRecorder,
+    JointRecorder
+)
 
 
 class JointPosition(object):
