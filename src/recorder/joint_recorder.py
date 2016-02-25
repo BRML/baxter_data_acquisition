@@ -38,7 +38,7 @@ from std_msgs.msg import Float64MultiArray
 
 
 class JointRecorder(object):
-    def __init__(self, limb, rate, anomaly_mode='manual'):
+    def __init__(self, limb, rate, anomaly_mode='none'):
         """ Joint recorder class writing baxter joint data into a .hdf5 file,
         where the index gives the sample number, containing modalities
         ('configuration', 'effort', 'anomaly', 'acceleration') and their
@@ -46,7 +46,7 @@ class JointRecorder(object):
         :param limb: The limb to record data from ['left', 'right'].
         :param rate: The desired recording rate.
         :param anomaly_mode: Type of anomaly in the data ['manual',
-        'automatic'].
+        'automatic', 'none'].
         :return: Joint recorder instance.
         """
         self._header = dict()
@@ -58,15 +58,17 @@ class JointRecorder(object):
         self._header['acceleration'] = ['time', limb + '_x',
                                         limb + '_y', limb + '_z']
         self._header['effort'] = self._header['configuration']
-        if anomaly_mode is 'manual':
+        if anomaly_mode == 'manual':
             self._header['anomaly'] = ['time',
                                        "partId (0-shoulder, 1-s1, "
                                        "2-upper arm, 3-e1, 4-lower arm, "
                                        "5-w1, 6-palm, 7-w2)"]
-        else:
+        elif anomaly_mode == 'automatic':
             self._header['anomaly'] = ['time', 'P multiplier',
                                        'I multiplier', 'D multiplier',
                                        'additive', 'jointId', 'mode', 'type']
+        else:
+            self._header['anomaly'] = ['', ]
         self._arm = limb
         self._rate = rospy.Rate(rate)
         self._anomaly_mode = anomaly_mode
@@ -102,11 +104,12 @@ class JointRecorder(object):
         self._sub_acc = rospy.Subscriber('/robot/accelerometer/' + self._arm +
                                          '_accelerometer/state', Imu,
                                          self._cb_acc, queue_size=1)
-        self._sub_anom = rospy.Subscriber('/data/anomaly', Float64MultiArray,
+        ns = 'data/limb/' + self._arm
+        self._sub_anom = rospy.Subscriber(ns + '/anomaly', Float64MultiArray,
                                           self._cb_anom, queue_size=1)
-        self._sub_cfg_comm = rospy.Subscriber('/data/cfg/comm', JointCommand,
+        self._sub_cfg_comm = rospy.Subscriber(ns + '/cfg/comm', JointCommand,
                                               self._cb_cfg_comm, queue_size=1)
-        self._sub_cfg_des = rospy.Subscriber('/data/cfg/des', JointCommand,
+        self._sub_cfg_des = rospy.Subscriber(ns + '/cfg/des', JointCommand,
                                              self._cb_cfg_des, queue_size=1)
         self._sub_state = rospy.Subscriber('/robot/joint_states', JointState,
                                            self._cb_state, queue_size=1)
@@ -114,7 +117,7 @@ class JointRecorder(object):
                                                '/joint_command', JointCommand,
                                                self._cb_efft_comm,
                                                queue_size=1)
-        self._sub_efft_gen = rospy.Subscriber('/data/efft/gen', JointCommand,
+        self._sub_efft_gen = rospy.Subscriber(ns + '/efft/gen', JointCommand,
                                               self._cb_efft_gen, queue_size=1)
 
     def stop(self):
@@ -202,7 +205,7 @@ class JointRecorder(object):
         """ Return anomaly data header.
         :return: Anomaly data header.
         """
-        if self._anomaly_mode is 'manual':
+        if self._anomaly_mode == 'manual':
             header = self._header['anomaly']
             header[1] = re.sub('\(.*?\)', '', header[1]).strip()
             return header

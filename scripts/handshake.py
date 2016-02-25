@@ -31,19 +31,32 @@ import os
 import rospkg
 import rospy
 
-from baxter_data_acquisition.jp_collision import JointPosition
+from baxter_data_acquisition.jp_handshake import JointPosition
 
 
 def main():
-    """ (Manual) collision data acquisition with the baxter research robot.
+    """ (Semi-manual) Data acquisition for handshake-scenario.
 
-    Moves one limb through configurations randomly selected from a pre-defined
-    set of configurations. For each movement between two configurations there
-    is a probability that a collision is sampled to be due at a randomly
-    sampled part of the limb. In this case the operator is instructed to hit
-    the robot in the desired location.
-    One sample consists of a number of configurations; a data set consists of
-    a number of samples.
+    We regard a handshake-scenario between a robot and a human as the simplest
+    example of a collaborative task without an object being involved. We wish
+    to transform the available (visual) information about the (human) arm into
+    a common frame with the (known) robotic arm. That is, learning in this
+    case involves (at least) two stages:
+    1. Match external and internal information about the controlled (robotic)
+       arm.
+    2. Match external information about the second ('not controlled' robotic
+    or human) arm.
+
+    To this end, we devise the following experiment and record the following
+    data. Two hands---either two robotic arms or one robotic and one human
+    arm---move repeatedly from the outside toward the inside, 'meeting' at
+    some point, indicating (or performing, in case of the second arm being a
+    human arm) a handshake. We record three types of data:
+    - The internal state of the robotic arm(s).
+    - Visual (3d) information from a time-of-flight (TOF) camera mounted on
+      the head of the robot, giving a 'egocentric' view of the scene.
+    - Visual (RGB and 3d) information from a Kinect V2 sensor standing in
+      front of the robot, giving a external view of the scene.
     """
     arg_fmt = argparse.RawDescriptionHelpFormatter
     parser = argparse.ArgumentParser(formatter_class=arg_fmt,
@@ -52,15 +65,19 @@ def main():
     required.add_argument('-l', '--limb', required=True,
                           choices=['left', 'right'],
                           help='The limb to record data from.')
+    required.add_argument('-e', '--experiment', required=True,
+                          choices=['r-r', 'r-h'],
+                          help='Robot-robot or robot-human handshake.')
+    required.add_argument('-m', '--mode', required=True,
+                          choices=['normal', 'occluded1', 'occluded2',
+                                   'robot', 'human'],
+                          help='The set of configurations to select.')
     parser.add_argument('-n', '--number', required=False,
                         type=int, default=1,
                         help='The number of samples to record.')
-    parser.add_argument('-c', '--collisions', required=False,
+    parser.add_argument('-t', '--threed', required=False,
                         type=bool, default=False,
-                        help='Whether there are collisions in the data.')
-    parser.add_argument('-i', '--images', required=False,
-                        type=bool, default=False,
-                        help='Whether images are to be recorded.')
+                        help='Whether 3d point clouds are to be recorded.')
     parser.add_argument('-o', '--outfile', required=False,
                         type=str, default='',
                         help='Recorded data filename (without extension).')
@@ -78,14 +95,14 @@ def main():
     filename = os.path.join(datapath, outfile)
 
     print 'Initializing node ...'
-    rospy.init_node('collision_data', anonymous=True)
+    rospy.init_node('handshake_data', anonymous=True)
 
-    jp = JointPosition(limb=args.limb, number=args.number,
-                       collisions=args.collisions, images=args.images)
+    jp = JointPosition(limb=args.limb, experiment=args.experiment,
+                       number=args.number, threed=args.threed)
     rospy.on_shutdown(jp.clean_shutdown)
-    jp.execute(filename)
+    jp.execute(outfile=filename, mode=args.mode)
 
-    print '\nDone.'
+    print 'Done.'
 
 if __name__ == '__main__':
     main()
