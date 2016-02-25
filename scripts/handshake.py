@@ -26,6 +26,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import datetime
+import os
+import rospkg
 import rospy
 
 
@@ -72,7 +75,21 @@ def main():
     parser.add_argument('-t', '--threed', required=False,
                         type=bool, default=False,
                         help='Whether 3d point clouds are to be recorded.')
+    parser.add_argument('-o', '--outfile', required=False,
+                        type=str, default='',
+                        help='Recorded data filename (without extension).')
     args = parser.parse_args(rospy.myargv()[1:])
+
+    ns = rospkg.RosPack().get_path('baxter_data_acquisition')
+    datapath = os.path.join(ns, 'data')
+    if not os.path.exists(datapath):
+        os.makedirs(datapath)
+    if len(args.outfile) == 0:
+        now = datetime.datetime.now()
+        outfile = now.strftime("%Y%m%d%H%M")
+    else:
+        outfile = args.outfile
+    filename = os.path.join(datapath, outfile)
 
     print 'Initializing node ...'
     rospy.init_node('handshake_data', anonymous=True)
