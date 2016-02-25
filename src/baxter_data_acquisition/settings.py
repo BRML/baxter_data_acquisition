@@ -32,8 +32,6 @@ probability = 0.15
 # recording rate [Hz]
 recording_rate = 500
 
-""" 'Collision' parameters """
-
 # run time per trial [s]
 run_time = 30.0
 
