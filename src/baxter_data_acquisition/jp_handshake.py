@@ -37,10 +37,14 @@ from std_msgs.msg import (
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
+from baxter_data_acquisition.face import flash_screen
 from baxter_data_acquisition.misc import set_dict
 import baxter_data_acquisition.settings as settings
 
-from recorder import JointRecorder
+from recorder import (
+    JointRecorder,
+    FlashRecorder
+)
 
 
 class JointPosition(object):
@@ -72,7 +76,7 @@ class JointPosition(object):
         if self._threed:
             # TODO: set up Kinect recorder instance here
             # TODO: set up RealSense recorder instance here
-            pass
+            self._rec_flash = FlashRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
@@ -131,12 +135,13 @@ class JointPosition(object):
                 if self._threed:
                     # TODO: start Kinect recorder
                     # TODO: start RealSense recorder
-                    pass
+                    self._rec_flash.start(outfile + '-%i_flash_white' % nr)
+                flash_screen(3, 0.5, 0.5)
                 self._one_sample(mode=mode)
                 if self._threed:
                     # TODO: stop Kinect recorder
                     # TODO: stop RealSense recorder
-                    pass
+                    self._rec_flash.stop()
                 self._rec_joint_robot.stop()
                 self._rec_joint_robot.write_sample()
                 if (self._experiment == 'r-r' or
