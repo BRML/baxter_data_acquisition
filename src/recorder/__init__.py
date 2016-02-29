@@ -11,3 +11,5 @@ as anomaly commands from one of the robot's limbs.
 from camera_recorder import CameraRecorder
 
 from joint_recorder import JointRecorder
+
+from flash_recorder import FlashRecorder
