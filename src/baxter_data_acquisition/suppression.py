@@ -26,8 +26,12 @@ class Suppressor(threading.Thread):
             rospy.sleep(0.1)
 
     def stop(self):
-        """ End the thread's while loop sending the suppress signal. """
+        """ End the thread's while loop sending the suppress signal.
+        :return: Whether the tread is alive.
+        """
         self._stop = True
+        self.join(5.0)
+        return self.is_alive()
 
 
 class AvoidanceSuppressor(Suppressor):

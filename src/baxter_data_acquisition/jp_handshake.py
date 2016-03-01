@@ -164,8 +164,7 @@ class JointPosition(object):
         except rospy.ROSInterruptException:
             pass
         for thread in threads:
-            thread.stop()
-            thread.join()
+            ret = thread.stop()
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self, mode='normal'):
