@@ -41,6 +41,10 @@ from baxter_interface import CHECK_VERSION
 from baxter_data_acquisition.face import send_image
 from baxter_data_acquisition.sampler import CollisionSampler
 import baxter_data_acquisition.settings as settings
+from baxter_data_acquisition.suppression import (
+    AvoidanceSuppressor,
+    DetectionSuppressor
+)
 
 from recorder import (
     CameraRecorder,
@@ -124,6 +128,13 @@ class JointPosition(object):
         :param outfile: path and filename of the file(s) to write the data to,
         without the extension(s).
         """
+        threads = [
+            AvoidanceSuppressor(self._arm),
+            DetectionSuppressor(self._arm)
+        ]
+        for thread in threads:
+            thread.start()
+
         print '\nRecord data %s collisions into %s.' % \
               ('with' if self._collisions else 'without', outfile)
         self._limb.move_to_neutral()
@@ -145,6 +156,9 @@ class JointPosition(object):
                 self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
             pass
+        for thread in threads:
+            thread.stop()
+            thread.join()
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self):
