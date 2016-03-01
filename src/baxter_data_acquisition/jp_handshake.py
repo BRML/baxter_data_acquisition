@@ -135,6 +135,9 @@ class JointPosition(object):
 
         print '\nRecord handshake data into %s.' % outfile
         self._limb_robot.move_to_neutral()
+        if (self._experiment == 'r-r' or
+                (self._experiment == 'r-h' and mode == 'robot')):
+            self._limb_human.move_to_neutral()
         try:
             for nr in range(self._number):
                 if rospy.is_shutdown():
@@ -183,7 +186,6 @@ class JointPosition(object):
             velocity-controlled sinusoidal movement for a given period of
             time.
             """
-            self._limb_human.move_to_neutral()
             cmd_robot, cmd_human = self._get_r_r_configurations(mode)
 
             command = [cmd_robot[jn]
@@ -209,7 +211,6 @@ class JointPosition(object):
             """
             cmd_in, cmd_out = self._get_r_h_configurations()
             if mode == 'robot':
-                self._limb_human.move_to_neutral()
                 cmd_human = set_dict(self._arm_human,
                                      -0.11, 0.40, 1.29, 1.62,
                                      -0.19, 0.82, 1.28)
