@@ -40,6 +40,10 @@ from baxter_interface import CHECK_VERSION
 from baxter_data_acquisition.face import flash_screen
 from baxter_data_acquisition.misc import set_dict
 import baxter_data_acquisition.settings as settings
+from baxter_data_acquisition.suppression import (
+    AvoidanceSuppressor,
+    DetectionSuppressor
+)
 
 from recorder import (
     JointRecorder,
@@ -120,6 +124,15 @@ class JointPosition(object):
         Can be one of <'normal', 'occluded1', 'occluded2'> if self._experiment
         is 'r-r', or one of <'robot', 'human'> if self._experiment is 'r-h'.
         """
+        threads = [
+            AvoidanceSuppressor(self._arm_human),
+            AvoidanceSuppressor(self._arm_robot),
+            DetectionSuppressor(self._arm_human),
+            DetectionSuppressor(self._arm_robot)
+        ]
+        for thread in threads:
+            thread.start()
+
         print '\nRecord handshake data into %s.' % outfile
         self._limb_robot.move_to_neutral()
         try:
@@ -150,6 +163,9 @@ class JointPosition(object):
                     self._rec_joint_human.write_sample()
         except rospy.ROSInterruptException:
             pass
+        for thread in threads:
+            thread.stop()
+            thread.join()
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self, mode='normal'):
