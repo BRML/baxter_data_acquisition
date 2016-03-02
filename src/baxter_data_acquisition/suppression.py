@@ -17,7 +17,8 @@ class Suppressor(threading.Thread):
             raise ValueError("'limb' must be 'left' or 'right'!")
 
         self._stop = False
-        self._pub = rospy.Publisher('robot/limb/'+limb+name, Empty)
+        self._pub = rospy.Publisher('robot/limb/'+limb+name, Empty,
+                                    queue_size=10)
 
     def run(self):
         """ Send suppress signal at rate > 5 Hz. """
