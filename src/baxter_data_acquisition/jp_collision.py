@@ -53,25 +53,29 @@ from recorder import (
 
 
 class JointPosition(object):
-    def __init__(self, limb, number, collisions, images):
+    def __init__(self, limb, number, collisions, images, sim):
         """ Joint position data acquisition with manual induced collisions.
         :param limb: The limb to record data from.
         :param number: The number of samples to record.
         :param collisions: Whether there are collisions in the data.
         :param images: Whether images are to be recorded.
+        :param sim: Whether in simulation or reality.
         :return: A baxter robot instance.
         """
         self._arm = limb
         self._number = number
         self._collisions = collisions
         self._images = images
+        self._sim = sim
 
         self._limb = baxter_interface.Limb(self._arm)
         self._rec_joint = JointRecorder(limb=self._arm,
                                         rate=settings.recording_rate,
                                         anomaly_mode='manual')
+
         if self._images:
-            self._camera = baxter_interface.CameraController('head_camera')
+            cam = 'head_camera'
+            self._camera = baxter_interface.CameraController(cam, self._sim)
             self._rec_cam = CameraRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
@@ -103,7 +107,8 @@ class JointPosition(object):
         if self._images:
             # Camera handling is one fragile thing...
             try:
-                baxter_interface.CameraController('right_hand_camera').close()
+                baxter_interface.CameraController('right_hand_camera',
+                                                  self._sim).close()
             except AttributeError:
                 pass
             self._camera.resolution = (1280, 800)
