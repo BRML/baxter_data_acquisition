@@ -29,16 +29,22 @@ import numpy as np
 import snappy
 import struct
 
+from recorder import CameraRecorder
+
 
 class DepthRecorder(object):
     def __init__(self):
-        pass
+        self._rec_cam = CameraRecorder()
+        self._rec_cam.camera = '/cameras/kinect/rgb/image_raw'
 
     def start(self, outname):
-        pass
+        # record rgb image + timestamps
+        self._rec_cam.start(outname=outname + '_rgb',
+                            fps=30.0, imgsize=(512, 424))
+        # record depth image + timestamps
 
     def stop(self):
-        pass
+        self._rec_cam.stop()
 
 
 def depth_from_binary(binary_name):
