@@ -29,6 +29,12 @@ from recorder.depth_recorder import DepthRecorder
 
 class KinectRecorder(object):
     def __init__(self):
+        """ Kinect V2 sensor recorder class writing RGB images into a .avi
+        video file and corresponding time stamps into an accompanying .txt
+        file, as well as depth images into a .bin binary file and
+        corresponding time stamps into an accompanying .txt file.
+        :return:
+        """
         self._rec_rgb = CameraRecorder()
         self._rec_rgb.camera = '/cameras/kinect/rgb/image_raw'
 
@@ -36,12 +42,17 @@ class KinectRecorder(object):
         self._rec_depth.camera = '/cameras/kinect/depth/image_raw'
 
     def start(self, outname):
-        # record rgb image + timestamps
+        """ Set up the Kinect recorder and record both RGB- and depth data.
+        :param outname: Filename to write the RGB- and depth data to, without
+        the extension.
+        """
+        # record rgb image + time stamps
         self._rec_rgb.start(outname=outname + '_rgb',
                             fps=30.0, imgsize=(512, 424))
-        # record depth image + timestamps
+        # record depth image + time stamps
         self._rec_depth.start(outname=outname + '_depth')
 
     def stop(self):
+        """ Stop the Kinect recorder """
         self._rec_depth.stop()
         self._rec_rgb.stop()

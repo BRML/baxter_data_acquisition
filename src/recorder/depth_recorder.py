@@ -38,7 +38,7 @@ class DepthRecorder(object):
     def __init__(self):
         """ Depth recorder class writing depth ROS image messages (single
         channel Float32 image) recorded with, e.g., the Kinect V2 sensor,
-        compressed into a .bin binary file and timestamps for each image
+        compressed into a .bin binary file and time stamps for each image
         frame into an accompanying .txt file.
         """
         self._fp_d = None
