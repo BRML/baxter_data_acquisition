@@ -14,4 +14,4 @@ from joint_recorder import JointRecorder
 
 from flash_recorder import FlashRecorder
 
-from depth_recorder import DepthRecorder
+from kinect_recorder import KinectRecorder

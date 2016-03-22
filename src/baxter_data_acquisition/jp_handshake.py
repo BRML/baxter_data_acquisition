@@ -48,7 +48,7 @@ from baxter_data_acquisition.suppression import (
 from recorder import (
     JointRecorder,
     FlashRecorder,
-    DepthRecorder
+    KinectRecorder
 )
 
 
@@ -79,7 +79,7 @@ class JointPosition(object):
         self._rec_joint_human = JointRecorder(limb=self._arm_human,
                                               rate=settings.recording_rate)
         if self._threed:
-            self._rec_kinect = DepthRecorder()
+            self._rec_kinect = KinectRecorder()
             # TODO: set up RealSense recorder instance here
             self._rec_flash = FlashRecorder()
 
