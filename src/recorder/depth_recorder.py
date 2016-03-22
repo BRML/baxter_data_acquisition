@@ -25,26 +25,79 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import cv_bridge
 import numpy as np
+import rospy
 import snappy
 import struct
+import sys
 
-from recorder import CameraRecorder
+from sensor_msgs.msg import Image
 
 
 class DepthRecorder(object):
     def __init__(self):
-        self._rec_cam = CameraRecorder()
-        self._rec_cam.camera = '/cameras/kinect/rgb/image_raw'
+        self._fp_d = None
+        self._fp_ts = None
+        self._sub = None
+        self._camera = ""
+        self.camera = '/cameras/kinect/depth/image_raw'
 
     def start(self, outname):
-        # record rgb image + timestamps
-        self._rec_cam.start(outname=outname + '_rgb',
-                            fps=30.0, imgsize=(512, 424))
-        # record depth image + timestamps
+        try:
+            self._fp_ts = open(outname + '_depth.txt', 'w')
+        except IOError:
+            print "ERROR-start-Problem with opening text file."
+            raise
+        self._fp_ts.write('# timestamps [s]\n')
+
+        try:
+            self._fp_d = open(outname + '_depth.bin', 'wb')
+        except IOError:
+            print "ERROR-start-Problem with opening binary file."
+            raise
+        self._sub = rospy.Subscriber(self.camera,
+                                     Image, callback=self._add_image)
+        return not (self._fp_d.closed and self._fp_ts.closed)
+
+    def _add_image(self, imgmsg):
+        """ Camera subscriber callback function """
+        ts = rospy.get_time()
+        self._fp_ts.write('%f\n' % ts)
+
+        try:
+            img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
+        except cv_bridge.CvBridgeError:
+            print 'ERROR-add_image-Problem with ROS image message conversion.'
+            raise
+        # convert float32 image to int8 image
+        min_cutoff = 0.5
+        max_cutoff = 4.5
+        img_int8 = 255*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
+        img_int8 = img_int8.astype(np.uint8, copy=False)
+        # compress image with snappy
+        img_comp = snappy.compress(img_int8)
+        # write number of bytes of compressed image
+        self._fp_d.write("%s" % sys.getsizeof(img_comp))
+        # write compressed image
+        self._fp_d.write(img_comp)
 
     def stop(self):
-        self._rec_cam.stop()
+        self._sub.unregister()
+        self._fp_d.close()
+        self._fp_ts.close()
+        return self._fp_d.closed or self._fp_ts.closed
+
+    @property
+    def camera(self):
+        """ String identifying the camera to record images from.
+        :return: Camera name.
+        """
+        return self._camera
+
+    @camera.setter
+    def camera(self, camera):
+        self._camera = camera
 
 
 def depth_from_binary(binary_name):
@@ -70,7 +123,8 @@ def depth_from_binary(binary_name):
 if __name__ == '__main__':
     import cv2
 
-    fn = '/home/baxter/Downloads/DepthSenseDepthLog2015-12-17 13.13.19.647.bin'
+    # fn = '/home/baxter/Downloads/DepthSenseDepthLog2015-12-17 13.13.19.647.bin'
+    fn = '/home/baxter/ros_ws/src/baxter_data_acquisition/data/201603221253-0_kinect_depth_depth.bin'
 
     images = depth_from_binary(fn)
 
