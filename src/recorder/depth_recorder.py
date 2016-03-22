@@ -30,6 +30,17 @@ import snappy
 import struct
 
 
+class DepthRecorder(object):
+    def __init__(self):
+        pass
+
+    def start(self, outname):
+        pass
+
+    def stop(self):
+        pass
+
+
 def depth_from_binary(binary_name):
     """ Decode binary file containing depth images and return the depth
     images as a numpy ndarray.
