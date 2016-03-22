@@ -41,6 +41,9 @@ class CameraRecorder(object):
         self._sub = None
         self._fp = None
 
+        self._camera = ""
+        self.camera = '/cameras/head_camera/image'
+
     def start(self, outname, fps, imgsize):
         """ Set up the camera recorder with the parameters for the recording
         and subscribe to the callback function of the baxter head camera.
@@ -66,7 +69,7 @@ class CameraRecorder(object):
         if not self._clip.isOpened():
             print "ERROR-start-Problem with opening VideoWriter."
             raise
-        self._sub = rospy.Subscriber('/cameras/head_camera/image',
+        self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
         return self._clip.isOpened() and not self._fp.closed
 
@@ -94,3 +97,14 @@ class CameraRecorder(object):
         self._clip.release()
         self._fp.close()
         return self._clip.isOpened() or self._fp.closed
+
+    @property
+    def camera(self):
+        """ String identifying the camera to record images from.
+        :return: Camera name.
+        """
+        return self._camera
+
+    @camera.setter
+    def camera(self, camera):
+        self._camera = camera
