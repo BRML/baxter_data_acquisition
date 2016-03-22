@@ -32,6 +32,7 @@ import rospkg
 import rospy
 
 from baxter_data_acquisition.jp_collision import JointPosition
+from baxter_data_acquisition.simulation import sim_or_real
 
 
 def main():
@@ -80,8 +81,10 @@ def main():
     print 'Initializing node ...'
     rospy.init_node('collision_data', anonymous=True)
 
+    sim = sim_or_real()
     jp = JointPosition(limb=args.limb, number=args.number,
-                       collisions=args.collisions, images=args.images)
+                       collisions=args.collisions, images=args.images,
+                       sim=sim)
     rospy.on_shutdown(jp.clean_shutdown)
     jp.execute(filename)
 

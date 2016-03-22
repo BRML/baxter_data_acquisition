@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <!-- We resume the logic in Rethink Robotics' baxter_world.launch file -->
+    <include file="$(find baxter_gazebo)/launch/baxter_world.launch"/>
+    <!--<include file="$(find gazebo_ros)/launch/empty_world.launch"/>-->
+
+    <!-- Publish a static transform between the world and the base of the kinect -->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+          name="foot_to_world" args="2.5 0 0 0 0 0 1 world foot" />
+    <!-- Spawn the kinect sensor -->
+    <node name="spawn_kinect_urdf" pkg="gazebo_ros" type="spawn_model"
+          respawn="false" output="screen"
+          args="-file $(find baxter_description)/urdf/kinect.urdf -urdf
+                -x 2.5
+                -model kinect_stand"/>
+</launch>

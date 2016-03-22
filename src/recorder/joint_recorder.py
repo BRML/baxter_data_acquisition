@@ -136,6 +136,10 @@ class JointRecorder(object):
             idx = len(fp)
             g = fp.require_group('%i' % idx)
             for modality in self._data:
+                if modality == 'anomaly':
+                    if len(self._data['anomaly']['commanded']) == 0:
+                        # no anomaly in this sample
+                        continue
                 gm = g.require_group(modality)
                 for field in self._data[modality]:
                     data = np.asarray(self._data[modality][field])
