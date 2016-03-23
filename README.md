@@ -51,6 +51,17 @@ $ killall gzserver
 ```
 before trying to start Gazebo again.
 
+Note: If the Error 
+```
+Error [Param.cc:181] Unable to set value [1,0471975511965976] for key[horizontal_fov]
+Error [Param.cc:181] Unable to set value [0,100000001] for key[near]`
+```
+pops up, do (see [link](http://answers.ros.org/question/199401/problem-with-indigo-and-gazebo-22/)) 
+```bash
+$ export LC_NUMERIC=C
+```
+
+
 To run an experiment in simulation, in another terminal do
 ```bash
 $ cd ~/ros_ws
