@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+    <arg name="load_robot_description" default="true"/>
+    <arg name="x" default="0.0"/>
+    <arg name="y" default="0.0"/>
+    <arg name="z" default="0.0"/>
+    <arg name="tf_prefix"/>
+
+    <param if="$(arg load_robot_description)"
+           name="robot_description"
+           command="$(find xacro)/xacro.py
+                    --inorder $(find kinect_description)/urdf/kinect_stand.urdf.xacro
+                    gazebo:=true"/>
+
+    <!-- Publish a static transform between the world and the base of the kinect -->
+    <node pkg="tf2_ros" type="static_transform_publisher"
+          name="foot_to_world"
+          args="$(arg x) $(arg y) $(arg z) 0 0 0 1 world $(arg tf_prefix)/base"/>
+
+    <!-- Spawn the kinect sensor -->
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+          respawn="false" output="screen"
+          args="-param robot_description -urdf
+                -x $(arg x)
+                -model kinect_stand"/>
+    <node pkg="robot_state_publisher" type="robot_state_publisher"
+          name="robot_st_pub">
+        <!--<remap from="joint_states" to="/$(arg tf_prefix)/joint_states"/>-->
+    </node>
+</launch>

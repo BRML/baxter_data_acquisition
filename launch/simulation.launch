@@ -20,19 +20,19 @@
     </include>
 
     <!-- Load baxter model -->
-    <include file="$(find baxter_data_acquisition)/launch/baxter.launch">
-        <arg name="io_gui" value="false"/>
-    </include>
+    <!--<include file="$(find baxter_data_acquisition)/launch/baxter.launch">-->
+        <!--<arg name="io_gui" value="false"/>-->
+    <!--</include>-->
 
     <!-- Load external Kinect sensor -->
-    <!--<group>-->
+    <group>
         <!--<arg name="tf_prefix" value="kinect_tf"/>-->
-        <!--<arg name="tf_prefix" value=""/>-->
+        <arg name="tf_prefix" value=""/>
 
         <!--<param name="tf_prefix" value="$(arg tf_prefix)"/>-->
-        <!--<include file="$(find baxter_data_acquisition)/launch/kinect.launch">-->
-            <!--<arg name="x" value="2.5"/>-->
-            <!--<arg name="tf_prefix" value="$(arg tf_prefix)"/>-->
-        <!--</include>-->
-    <!--</group>-->
+        <include file="$(find baxter_data_acquisition)/launch/kinect.launch">
+            <arg name="x" value="2.5"/>
+            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+        </include>
+    </group>
 </launch>
