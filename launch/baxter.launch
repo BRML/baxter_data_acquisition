@@ -10,7 +10,7 @@
     <!-- Spawn the kinect sensor -->
     <node name="spawn_kinect_urdf" pkg="gazebo_ros" type="spawn_model"
           respawn="false" output="screen"
-          args="-file $(find baxter_description)/urdf/kinect.urdf -urdf
+          args="-file $(find kinect_description)/urdf/kinect.urdf -urdf
                 -x 2.5
                 -model kinect_stand"/>
 </launch>
