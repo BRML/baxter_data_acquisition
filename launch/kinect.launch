@@ -19,7 +19,7 @@
           args="$(arg x) $(arg y) $(arg z) 0 0 0 1 world $(arg tf_prefix)/base"/>
 
     <!-- Spawn the kinect sensor -->
-    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+    <node name="$(arg tf_prefix)_urdf_spawner" pkg="gazebo_ros" type="spawn_model"
           respawn="false" output="screen"
           args="-param robot_description -urdf
                 -x $(arg x)
