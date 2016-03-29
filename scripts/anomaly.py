@@ -90,7 +90,11 @@ def main():
         outfile = now.strftime("%Y%m%d%H%M")
     else:
         outfile = args.outfile
-    filename = os.path.join(datapath, outfile)
+    # move all recorded data into a corresponding sub-folder
+    filepath = os.path.join(datapath, outfile)
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+    filename = os.path.join(filepath, outfile)
 
     print 'Initializing node ...'
     rospy.init_node('anomaly_data', anonymous=True)
