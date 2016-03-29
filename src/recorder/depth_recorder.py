@@ -55,14 +55,14 @@ class DepthRecorder(object):
         :return: Whether the binary- and text file were opened successfully.
         """
         try:
-            self._fp_ts = open(outname + '_depth.txt', 'w')
+            self._fp_ts = open(outname + '.txt', 'w')
         except IOError:
             print "ERROR-start-Problem with opening text file."
             raise
         self._fp_ts.write('# timestamps [s]\n')
 
         try:
-            self._fp_d = open(outname + '_depth.bin', 'wb')
+            self._fp_d = open(outname + '.bin', 'wb')
         except IOError:
             print "ERROR-start-Problem with opening binary file."
             raise
