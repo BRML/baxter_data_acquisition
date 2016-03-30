@@ -23,9 +23,15 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import numpy.random as rnd
 import rospy
 
 from std_msgs.msg import UInt16
+
+from baxter_core_msgs.msg import (
+    EndpointState,
+    JointCommand
+)
 
 import baxter_interface
 from baxter_interface import CHECK_VERSION
@@ -65,6 +71,16 @@ class JointPosition(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
+        ns = 'data/limb/' + self._arm + '/'
+        self._pub_cfg_des = rospy.Publisher(ns + 'cfg/des', JointCommand,
+                                            queue_size=10)
+        self._pub_pose_des = rospy.Publisher(ns + 'pose/des', EndpointState,
+                                             queue_size=10)
+
+        # TODO load list of poses (and corresponding configs)
+        self._poses = list()
+        self._configs = list()
+        self._previous_idx = None
 
         print "\nGetting robot state ... "
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
@@ -135,10 +151,28 @@ class JointPosition(object):
         the reachable workspace.
         :return: True on completion.
         """
+        pose, cmd = self._sample_pose()
+        self._pub_pose_des(
+            command=[pose[j] for j in self._rec_joint.get_header_pose()[1:]])
+        self._pub_cfg_des(
+            command=[cmd[j] for j in self._rec_joint.get_header_cfg()[1:]])
+        self._limb.move_to_joint_positions(cmd)
+        return True
+
+    def _sample_pose(self):
+        """ Randomly select one of the poses (and corresponding
+        configurations) stored in self._poses.
+        :returns: a tuple containing the sampled pose and corresponding
+        configuration.
+        """
+        idx = None
+        while True:
+            idx = rnd.randint(0, len(self._poses))
+            if not idx == self._previous_idx:
+                break
+        self._previous_idx = idx
+        return self._poses[idx], self._configs[idx]
+        # TODO define pose and configuration
         # 1. sample a pose from W
         # 2. convert pose to configuration using inverse kinematics
         # 3. if no solution, go back to 1.
-        # 4. publish desired pose
-        # 5. publish desired config
-        # 6. move to desired config
-        return True
