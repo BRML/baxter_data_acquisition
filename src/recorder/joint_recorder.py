@@ -154,6 +154,10 @@ class JointRecorder(object):
                     if len(self._data['anomaly']['commanded']) == 0:
                         # no anomaly in this sample
                         continue
+                elif modality == 'acceleration':
+                    if len(self._data['acceleration']['measured']) == 0:
+                        # no acceleration in this sample (simulation)
+                        continue
                 gm = g.require_group(modality)
                 for field in self._data[modality]:
                     data = np.asarray(self._data[modality][field])
