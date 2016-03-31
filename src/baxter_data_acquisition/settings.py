@@ -133,3 +133,9 @@ def tau_lim(limb, scale=0.2):
               (-15.0, 15.0), (-15.0, 15.0), (-15.0, 15.0)]
     values = [tuple([v*scale for v in val]) for val in values]
     return {a: b for a, b in zip(joint_names(limb), values)}
+
+
+""" 'Seemingly goal oriented movement' parameters """
+
+# duration to apply torque control [s]
+tau_duration = 5.0
