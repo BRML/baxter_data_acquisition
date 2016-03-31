@@ -183,9 +183,12 @@ class JointPosition(object):
         """
         # TODO make 0.2 a setting
         tau_lim = settings.tau_lim(limb=self._arm, scale=0.2)
-        return [{jn: (b - a)*rnd.random_sample() + a}
-                for jn in tau_lim
-                for a, b in tau_lim[jn]]
+        tau = dict()
+        for jn in tau_lim:
+            a, b = tau_lim[jn]
+            tau[jn] = (b - a)*rnd.random_sample() + a
+        print tau
+        return tau
 
     def _sample_duration(self):
         """ Sample duration for torque vector application uniform from a
