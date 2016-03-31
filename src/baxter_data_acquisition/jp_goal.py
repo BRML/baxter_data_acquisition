@@ -184,7 +184,6 @@ class JointPosition(object):
         for jn in tau_lim:
             a, b = tau_lim[jn]
             tau[jn] = (b - a)*rnd.random_sample() + a
-        print tau
         return tau
 
     @staticmethod
