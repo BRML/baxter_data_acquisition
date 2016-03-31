@@ -35,6 +35,7 @@ from baxter_data_acquisition.jp_goal import JointPosition
 
 
 def main():
+    # TODO update documentation (torque control)
     """ Imprecise goal oriented motion data acquisition with the baxter robot.
 
     A robotic arm is moved between (pseudo-)random poses in Cartesian space in

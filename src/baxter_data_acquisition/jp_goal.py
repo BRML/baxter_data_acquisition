@@ -68,6 +68,8 @@ class JointPosition(object):
             cam = 'head_camera'
             self._camera = baxter_interface.CameraController(cam, self._sim)
             self._rec_cam = CameraRecorder()
+        if self._threed:
+            pass
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
@@ -77,10 +79,9 @@ class JointPosition(object):
         self._pub_pose_des = rospy.Publisher(ns + 'pose/des', EndpointState,
                                              queue_size=10)
 
-        # TODO load list of poses (and corresponding configs)
-        self._poses = list()
-        self._configs = list()
-        self._previous_idx = None
+        # torque control parameters
+        self._rate = 1000.0  # Hz
+        self._missed_cmds = 20.0  # Missed cycles before triggering timeout
 
         print "\nGetting robot state ... "
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
@@ -151,28 +152,46 @@ class JointPosition(object):
         the reachable workspace.
         :return: True on completion.
         """
-        pose, cmd = self._sample_pose()
-        self._pub_pose_des(
-            command=[pose[j] for j in self._rec_joint.get_header_pose()[1:]])
-        self._pub_cfg_des(
-            command=[cmd[j] for j in self._rec_joint.get_header_cfg()[1:]])
-        self._limb.move_to_joint_positions(cmd)
+        control_rate = rospy.Rate(self._rate)
+
+        # for safety purposes, set the control rate command timeout.
+        # if the specified number of command cycles are missed, the robot
+        # will timeout and disable
+        self._limb.set_command_timeout((1.0/self._rate)*self._missed_cmds)
+
+        tau_cmd = self._sample_torque()
+        duration = self._sample_duration()
+        # TODO publish desired torque and duration
+
+        elapsed = 0.0
+        start = rospy.get_time()
+        while not rospy.is_shutdown() and elapsed < duration:
+            if not self._rs.state().enabled:
+                rospy.logerr("Joint torque control failed to meet specified "
+                             "control rate timeout!")
+                break
+            self._limb.set_joint_torques(tau_cmd)
+            elapsed = rospy.get_time() - start
+            control_rate.sleep()
         return True
 
-    def _sample_pose(self):
-        """ Randomly select one of the poses (and corresponding
-        configurations) stored in self._poses.
-        :returns: a tuple containing the sampled pose and corresponding
-        configuration.
+    def _sample_torque(self):
+        """ Sample a random torque vector from the scaled range of torque
+        limits for each joint. The torque value is sampled uniform from the
+        range of torques for each joint.
+        :return: A dictionary of joint name keys to joint torque values [Nm].
         """
-        idx = None
-        while True:
-            idx = rnd.randint(0, len(self._poses))
-            if not idx == self._previous_idx:
-                break
-        self._previous_idx = idx
-        return self._poses[idx], self._configs[idx]
-        # TODO define pose and configuration
-        # 1. sample a pose from W
-        # 2. convert pose to configuration using inverse kinematics
-        # 3. if no solution, go back to 1.
+        # TODO make 0.2 a setting
+        tau_lim = settings.tau_lim(limb=self._arm, scale=0.2)
+        return [{jn: (b - a)*rnd.random_sample() + a}
+                for jn in tau_lim
+                for a, b in tau_lim[jn]]
+
+    def _sample_duration(self):
+        """ Sample duration for torque vector application uniform from a
+        reasonable range.
+        :return: The torque control duration [s].
+        """
+        # TODO make 5.0 a setting
+        tau_time = 5.0
+        return tau_time*rnd.random_sample()
