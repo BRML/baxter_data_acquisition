@@ -193,5 +193,9 @@ class JointPosition(object):
         reasonable range.
         :return: The torque control duration [s].
         """
-        tau_time = settings.tau_duration
-        return tau_time*rnd.random_sample()
+        duration = (
+            (settings.tau_duration_max - settings.tau_duration_min) *
+            rnd.random_sample() +
+            settings.tau_duration_min
+        )
+        return duration
