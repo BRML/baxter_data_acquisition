@@ -137,5 +137,8 @@ def tau_lim(limb, scale=0.2):
 
 """ 'Seemingly goal oriented movement' parameters """
 
+# scaling factor for joint torques
+tau_scale = 0.1
+
 # duration to apply torque control [s]
 tau_duration = 5.0

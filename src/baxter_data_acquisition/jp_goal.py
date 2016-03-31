@@ -181,8 +181,7 @@ class JointPosition(object):
         range of torques for each joint.
         :return: A dictionary of joint name keys to joint torque values [Nm].
         """
-        # TODO make 0.2 a setting
-        tau_lim = settings.tau_lim(limb=self._arm, scale=0.2)
+        tau_lim = settings.tau_lim(limb=self._arm, scale=settings.tau_scale)
         tau = dict()
         for jn in tau_lim:
             a, b = tau_lim[jn]
