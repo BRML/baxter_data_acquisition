@@ -88,6 +88,7 @@ class JointRecorder(object):
         self._sub_state = None
         self._sub_efft_comm = None
         self._sub_efft_gen = None
+        self._sub_efft_des = None
         self._sub_pose = None
 
     def start(self, outfile):
@@ -107,6 +108,7 @@ class JointRecorder(object):
         self._data['effort'] = dict()
         self._data['effort']['commanded'] = list()
         self._data['effort']['generated'] = list()
+        self._data['effort']['desired'] = list()
         self._data['effort']['measured'] = list()
         self._data['pose'] = dict()
         self._data['pose']['measured'] = list()
@@ -129,6 +131,8 @@ class JointRecorder(object):
                                                queue_size=1)
         self._sub_efft_gen = rospy.Subscriber(ns + '/efft/gen', JointCommand,
                                               self._cb_efft_gen, queue_size=1)
+        self._sub_efft_des = rospy.Subscriber(ns + '/efft/des', JointCommand,
+                                              self._cb_efft_des, queue_size=1)
         self._sub_pose = rospy.Subscriber('/robot/limb/' + self._arm +
                                           '/endpoint_state', EndpointState,
                                           self._cb_pose, queue_size=1)
@@ -142,6 +146,7 @@ class JointRecorder(object):
         self._sub_state.unregister()
         self._sub_efft_comm.unregister()
         self._sub_efft_gen.unregister()
+        self._sub_efft_des.unregister()
         self._sub_pose.unregister()
 
     def write_sample(self):
@@ -216,6 +221,10 @@ class JointRecorder(object):
     def _cb_efft_gen(self, data):
         effort = list(data.command)
         self._data['effort']['generated'].append([rospy.get_time()] + effort)
+
+    def _cb_efft_des(self, data):
+        effort = list(data.command)
+        self._data['effort']['desired'].append([rospy.get_time()] + effort)
 
     def _cb_pose(self, data):
         pose = [data.pose.position.x,

@@ -28,10 +28,7 @@ import rospy
 
 from std_msgs.msg import UInt16
 
-from baxter_core_msgs.msg import (
-    EndpointState,
-    JointCommand
-)
+from baxter_core_msgs.msg import JointCommand
 
 import baxter_interface
 from baxter_interface import CHECK_VERSION
@@ -74,9 +71,7 @@ class JointPosition(object):
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
         ns = 'data/limb/' + self._arm + '/'
-        self._pub_cfg_des = rospy.Publisher(ns + 'cfg/des', JointCommand,
-                                            queue_size=10)
-        self._pub_pose_des = rospy.Publisher(ns + 'pose/des', EndpointState,
+        self._pub_efft_des = rospy.Publisher(ns + 'efft/des', JointCommand,
                                              queue_size=10)
 
         # torque control parameters
@@ -161,7 +156,6 @@ class JointPosition(object):
 
         tau_cmd = self._sample_torque()
         duration = self._sample_duration()
-        # TODO publish desired torque and duration
 
         elapsed = 0.0
         start = rospy.get_time()
@@ -170,6 +164,10 @@ class JointPosition(object):
                 rospy.logerr("Joint torque control failed to meet specified "
                              "control rate timeout!")
                 break
+            self._pub_efft_des.publish(
+                command=[tau_cmd[jn]
+                         for jn in self._rec_joint.get_header_efft()[1:]]
+            )
             self._limb.set_joint_torques(tau_cmd)
             elapsed = rospy.get_time() - start
             control_rate.sleep()
