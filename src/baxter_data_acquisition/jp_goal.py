@@ -189,7 +189,8 @@ class JointPosition(object):
         print tau
         return tau
 
-    def _sample_duration(self):
+    @staticmethod
+    def _sample_duration():
         """ Sample duration for torque vector application uniform from a
         reasonable range.
         :return: The torque control duration [s].
