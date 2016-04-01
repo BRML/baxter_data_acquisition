@@ -133,7 +133,7 @@ class JointPosition(object):
                                         self._camera.fps,
                                         self._camera.resolution)
                 if self._threed:
-                    self._rec_senz3d.start(outfile + '_senz3d-%i' % nr)
+                    self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
                     self._rec_flash.start(outfile + '-%i_flash_white' % nr)
                 flash_screen(3, 0.5, 0.5)
                 self._one_sample()
