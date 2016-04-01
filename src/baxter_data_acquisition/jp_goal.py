@@ -33,10 +33,12 @@ from baxter_core_msgs.msg import JointCommand
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
+from baxter_data_acquisition.face import flash_screen
 import baxter_data_acquisition.settings as settings
 
 from recorder import (
     CameraRecorder,
+    FlashRecorder,
     JointRecorder,
     SenzRecorder
 )
@@ -68,6 +70,7 @@ class JointPosition(object):
             self._rec_cam = CameraRecorder()
         if self._threed:
             self._rec_senz3d = SenzRecorder()
+            self._rec_flash = FlashRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
@@ -131,11 +134,14 @@ class JointPosition(object):
                                         self._camera.resolution)
                 if self._threed:
                     self._rec_senz3d.start(outfile + '_senz3d-%i' % nr)
+                    self._rec_flash.start(outfile + '-%i_flash_white' % nr)
+                flash_screen(3, 0.5, 0.5)
                 self._one_sample()
                 if self._images:
                     self._rec_cam.stop()
                 if self._threed:
                     self._rec_senz3d.stop()
+                    self._rec_flash.stop()
                 self._rec_joint.stop()
                 self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
