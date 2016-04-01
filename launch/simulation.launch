@@ -29,14 +29,16 @@
     </include>
 
     <!-- Load external Kinect sensor -->
-    <!--<group ns="kinect">-->
-        <!--&lt;!&ndash;<arg name="tf_prefix" value="kinect_tf"/>&ndash;&gt;-->
-        <!--<arg name="tf_prefix" value=""/>-->
+    <arg name="depth_external" default="false"/>
 
-        <!--&lt;!&ndash;<param name="tf_prefix" value="$(arg tf_prefix)"/>&ndash;&gt;-->
-        <!--<include file="$(find baxter_data_acquisition)/launch/kinect.launch">-->
-            <!--<arg name="x" value="2.5"/>-->
-            <!--<arg name="tf_prefix" value="$(arg tf_prefix)"/>-->
-        <!--</include>-->
-    <!--</group>-->
+    <group if="$(arg depth_external)" ns="kinect">
+        <!--<arg name="tf_prefix" value="kinect_tf"/>-->
+        <arg name="tf_prefix" value=""/>
+
+        <!--<param name="tf_prefix" value="$(arg tf_prefix)"/>-->
+        <include file="$(find baxter_data_acquisition)/launch/kinect.launch">
+            <arg name="x" value="2.5"/>
+            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+        </include>
+    </group>
 </launch>
