@@ -48,7 +48,7 @@ class SenzRecorder(object):
         """
         # record rgb image + time stamps
         self._rec_rgb.start(outname=outname + '_rgb',
-                            fps=30.0, imgsize=(1920, 1080))
+                            fps=30.0, imgsize=(1280, 720))
         # record depth image + time stamps
         self._rec_depth.start(outname=outname + '_depth')
 
