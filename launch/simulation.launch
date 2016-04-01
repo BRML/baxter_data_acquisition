@@ -19,10 +19,13 @@
         <arg name="headless" value="$(arg headless)"/>
     </include>
 
-    <!-- Load baxter model -->
+    <!-- Load (modified) baxter model -->
     <arg name="io_gui" default="false"/>
+    <arg name="depth_internal" default="false"/>
+
     <include file="$(find baxter_data_acquisition)/launch/baxter.launch">
         <arg name="io_gui" value="$(arg io_gui)"/>
+        <arg name="depth" value="$(arg depth_internal)"/>
     </include>
 
     <!-- Load external Kinect sensor -->
