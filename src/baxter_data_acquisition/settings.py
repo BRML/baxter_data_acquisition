@@ -141,5 +141,5 @@ def tau_lim(limb, scale=0.2):
 tau_scale = 0.005
 
 # duration to apply torque control [s]
-tau_duration_min = 2.0
-tau_duration_max = 7.0
+tau_duration_min = 5.0
+tau_duration_max = 30.0
