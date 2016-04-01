@@ -31,14 +31,9 @@
     <!-- Load external Kinect sensor -->
     <arg name="depth_external" default="false"/>
 
-    <group if="$(arg depth_external)" ns="kinect">
-        <!--<arg name="tf_prefix" value="kinect_tf"/>-->
-        <arg name="tf_prefix" value=""/>
-
-        <!--<param name="tf_prefix" value="$(arg tf_prefix)"/>-->
+    <group if="$(arg depth_external)">
         <include file="$(find baxter_data_acquisition)/launch/kinect.launch">
             <arg name="x" value="2.5"/>
-            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
         </include>
     </group>
 </launch>
