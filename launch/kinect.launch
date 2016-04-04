@@ -7,7 +7,7 @@
     <arg name="z" default="0.0"/>
 
     <param if="$(arg load_kinect_description)"
-           name="kinect_description"
+           name="robot_description"
            command="$(find xacro)/xacro.py
                     --inorder $(find kinect_description)/urdf/kinect_stand.urdf.xacro
                     gazebo:=true"/>
@@ -20,12 +20,25 @@
     <!-- Spawn the kinect sensor -->
     <node name="kinect_urdf_spawner" pkg="gazebo_ros" type="spawn_model"
           respawn="false" output="screen"
-          args="-param kinect_description -urdf
+          args="-param robot_description -urdf
                 -x $(arg x)
+                -y $(arg y)
+                -z $(arg z)
                 -model kinect_stand"/>
 
-    <node pkg="robot_state_publisher" type="robot_state_publisher"
-          name="kinect_state_publisher">
-        <remap from="joint_states" to="/kinect/joint_states"/>
+
+    <!-- Load joint controller configurations from YAML file to parameter server -->
+    <rosparam file="$(find kinect_description)/config/kinect_control.yaml"
+              command="load"/>
+
+    <!-- Load the controllers -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner"
+          respawn="false" output="screen"
+          args="--shutdown-timeout -1 joint_state_controller">
+    </node>
+
+    <!-- Convert joint states to TF transforms -->
+    <node name="kinect_state_publisher" pkg="robot_state_publisher"
+          type="robot_state_publisher">
     </node>
 </launch>
