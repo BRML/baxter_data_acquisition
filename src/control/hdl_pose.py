@@ -148,7 +148,7 @@ if __name__ == '__main__':
     print "Enabling robot... "
     rs.enable()
 
-    ph = PoseHandler("/home/baxter/ros_ws/src/baxter_data_acquisition/data/setup/test/poses.txt")
+    ph = PoseHandler("/home/baxter/ros_ws/src/baxter_data_acquisition/data/setup/original/poses.txt")
     print ph._data
     ph.test_poses()
     print '\nDone.'
