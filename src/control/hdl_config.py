@@ -66,7 +66,7 @@ class ConfigurationHandler(PoseConfigDuration):
         """
         path = raw_input(" List-of-poses-file to load: ")
         poses = self.load_data(path)
-        arm = raw_input(" Compute poses for 'left' or 'right' arm: ")
+        arm = raw_input(" Compute configurations for 'left' or 'right' arm: ")
         if arm not in ['left', 'right']:
             raise ValueError("Must be 'left' or 'right' arm!")
         cfgs = np.empty((poses.shape[0], 7))
