@@ -108,9 +108,9 @@ class PoseHandler(PoseConfigDuration):
             elif key == 'n' or key == 'N':
                 print 'Writing recorded poses and configurations ...'
                 np.savetxt(os.path.join(path, 'poses.txt'), poses,
-                           delimiter=',')
+                           delimiter=',', header='x y z a b c')
                 np.savetxt(os.path.join(path, 'configurations.txt'), cfgs,
-                           delimiter=',')
+                           delimiter=',', header='s0, s1, e0, e1, w0, w1, w2')
                 return np.asarray(poses)
 
     def test_poses(self):
