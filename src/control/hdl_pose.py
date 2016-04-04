@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright (c) 2016, BRML
 # All rights reserved.
 #
@@ -24,7 +26,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
+import os
+import rospy
 
+from baxter_data_acquisition.settings import joint_names
 from hdl import PoseConfigDuration
 
 
@@ -40,7 +45,10 @@ class PoseHandler(PoseConfigDuration):
         except IOError as e:
             print " => %s" % e
             print "Recording poses ..."
-            self._data = self.record_poses()
+            path = raw_input("Where to save poses.txt and configurations.txt: ")
+            if not os.path.exists(path):
+                os.makedirs(path)
+            self._data = self.record_poses(path=path)
 
     def get_closest_pose(self, pose):
         """ Find the closest pose from the list of poses to a given pose. Use
@@ -57,6 +65,90 @@ class PoseHandler(PoseConfigDuration):
         err = np.asarray(err)
         return np.argmin(err)
 
-    def record_poses(self):
-        # TODO: implement recording of poses and conversion to config
-        pass
+    def record_poses(self, path):
+        """ Record limb poses and corresponding configurations.
+        Move baxter's limb manually to a configuration in workspace and press
+        'y' to record the current pose and the current set of joint angles.
+        Press 'n' to stop recording poses.
+        :param path: Where to save 'poses.txt' and 'configurations.txt'.
+        :return: A numpy array containing the recorded poses as rows.
+        """
+        from tf import transformations
+
+        import baxter_interface
+
+        def _endpoint_pose():
+            """ Current pose of the wrist of one arm of the baxter robot.
+            :return: pose [x, y, z, a, b, c]
+            """
+            qp = limb.endpoint_pose()
+            r = transformations.euler_from_quaternion(qp['orientation'])
+            return [qp['position'][0], qp['position'][1], qp['position'][2],
+                    r[0], r[1], r[2]]
+
+        arm = raw_input(" Record poses for 'left' or 'right' arm: ")
+        if arm not in ['left', 'right']:
+            raise ValueError("Must be 'left' or 'right' arm!")
+        limb = baxter_interface.Limb(arm)
+
+        poses = list()
+        cfgs = list()
+        while not rospy.is_shutdown():
+            key = raw_input("Record pose and configuration? (y, n): ")
+            if key == 'y' or key == 'Y':
+                print 'yes'
+                pose = _endpoint_pose()
+                poses.append(pose)
+                cfg = limb.joint_angles()
+                cfg_ik = self._inverse_kinematics(pose, arm)
+                cfgs.append(cfg_ik)
+                print 'pose', pose
+                print 'cfg ', [cfg[jn] for jn in joint_names(arm)]
+                print 'ikin', list(cfg_ik)
+            elif key == 'n' or key == 'N':
+                print 'Writing recorded poses and configurations ...'
+                np.savetxt(os.path.join(path, 'poses.txt'), poses,
+                           delimiter=',')
+                np.savetxt(os.path.join(path, 'configurations.txt'), cfgs,
+                           delimiter=',')
+                return np.asarray(poses)
+
+    def test_poses(self):
+        """ Test poses in self._data by moving through them one after the
+        other."""
+        arm = raw_input(" Test poses for 'left' or 'right' arm: ")
+        if arm not in ['left', 'right']:
+            raise ValueError("Must be 'left' or 'right' arm!")
+        limb = baxter_interface.Limb(arm)
+
+        for idx in range(self._data.shape[0]):
+            if rospy.is_shutdown():
+                break
+            cfg_ik = self._inverse_kinematics(self._data[idx, :], arm)
+            cmd = dict(zip(joint_names(arm), cfg_ik))
+            limb.move_to_joint_positions(cmd)
+
+
+if __name__ == '__main__':
+    import baxter_interface
+    from baxter_interface import CHECK_VERSION
+
+    def clean_shutdown():
+        if not init_state:
+            print "Disabling robot..."
+            rs.disable()
+
+    print 'Initializing node ...'
+    rospy.init_node('pose_test', anonymous=True)
+    rospy.on_shutdown(clean_shutdown)
+
+    print "\nGetting robot state ... "
+    rs = baxter_interface.RobotEnable(CHECK_VERSION)
+    init_state = rs.state().enabled
+    print "Enabling robot... "
+    rs.enable()
+
+    ph = PoseHandler("/home/baxter/ros_ws/src/baxter_data_acquisition/data/setup/test/poses.txt")
+    print ph._data
+    ph.test_poses()
+    print '\nDone.'
