@@ -34,7 +34,6 @@
     <group if="$(arg depth_external)" ns="kinect">
         <include file="$(find baxter_data_acquisition)/launch/kinect.launch">
             <arg name="x" value="2.5"/>
-            <arg name="z" value="-0.93"/>
         </include>
     </group>
 </launch>
