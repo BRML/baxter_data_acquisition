@@ -35,6 +35,7 @@ from baxter_interface import CHECK_VERSION
 
 from baxter_data_acquisition.face import flash_screen
 import baxter_data_acquisition.settings as settings
+from baxter_data_acquisition.workspace import Workspace
 
 from recorder import (
     CameraRecorder,
@@ -81,6 +82,9 @@ class JointPosition(object):
         # torque control parameters
         self._rate = 1000.0  # Hz
         self._missed_cmds = 20.0  # Missed cycles before triggering timeout
+
+        # robot workspace using default parameters
+        self._ws = Workspace()
 
         print "\nGetting robot state ... "
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
