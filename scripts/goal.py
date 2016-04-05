@@ -36,14 +36,15 @@ from baxter_data_acquisition.simulation import sim_or_real
 
 
 def main():
-    # TODO update documentation (torque control)
-    """ Imprecise goal oriented motion data acquisition with the baxter robot.
+    """ Apparent goal oriented motion data acquisition with the baxter robot.
 
     A robotic arm is moved between (pseudo-)random poses in Cartesian space in
-    a position-controlled manner. To this end, a trajectory between the current
-    configuration of the arm and the next desired configuration (corresponding
-    to the next desired pose) is computed and labeled according to a clustering
-    of the desired poses in Cartesian space.
+    a torque-controlled manner. To this end, a random seven-dimensional torque
+    vector is sampled together with a random duration for which the torque
+    vector is applied to the joints of one arm or the robot.
+
+    Afterward the resulting trajectory is labeled according to the portion of
+    the workspace the end-effector ends up in.
     """
     arg_fmt = argparse.RawDescriptionHelpFormatter
     parser = argparse.ArgumentParser(formatter_class=arg_fmt,
