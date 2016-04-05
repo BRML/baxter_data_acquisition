@@ -249,7 +249,6 @@ class JointRecorder(object):
         self._data['pose']['measured'].append([rospy.get_time()] + pose)
 
     def _cb_pose_label(self, data):
-        print data
         self._data['pose']['label'].append([rospy.get_time(), data.data])
 
     def get_header_acc(self):
