@@ -48,7 +48,8 @@ from baxter_data_acquisition.suppression import (
 from recorder import (
     JointRecorder,
     FlashRecorder,
-    KinectRecorder
+    KinectRecorder,
+    SenzRecorder
 )
 
 
@@ -80,7 +81,7 @@ class JointPosition(object):
                                               rate=settings.recording_rate)
         if self._threed:
             self._rec_kinect = KinectRecorder()
-            # TODO: set up RealSense recorder instance here
+            self._rec_senz3d = SenzRecorder()
             self._rec_flash = FlashRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
@@ -151,13 +152,13 @@ class JointPosition(object):
                     self._rec_joint_human.start(outfile + '_human')
                 if self._threed:
                     self._rec_kinect.start(outfile + '-%i_kinect' % nr)
-                    # TODO: start RealSense recorder
+                    self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
                     self._rec_flash.start(outfile + '-%i_flash_white' % nr)
                 flash_screen(3, 0.5, 0.5)
                 self._one_sample(mode=mode)
                 if self._threed:
                     self._rec_kinect.stop()
-                    # TODO: stop RealSense recorder
+                    self._rec_senz3d.stop()
                     self._rec_flash.stop()
                 self._rec_joint_robot.stop()
                 self._rec_joint_robot.write_sample()
