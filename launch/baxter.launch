@@ -16,7 +16,7 @@
     <arg name="load_robot_description" default="true"/>
     <param if="$(arg load_robot_description)" name="robot_description"
            command="$(find xacro)/xacro.py
-                    --inorder $(find baxter_description)/urdf/baxter.urdf.xacro
+                    --inorder $(find baxter_data_acquisition)/urdf/baxter.urdf.xacro
                     gazebo:=true
                     depth:=$(arg depth)"/>
 
