@@ -41,6 +41,7 @@ from recorder import (
     CameraRecorder,
     FlashRecorder,
     JointRecorder,
+    KinectRecorder,
     SenzRecorder
 )
 
@@ -71,6 +72,7 @@ class JointPosition(object):
             self._rec_cam = CameraRecorder()
         if self._threed:
             self._rec_senz3d = SenzRecorder()
+            self._rec_kinect = KinectRecorder()
             self._rec_flash = FlashRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
@@ -139,6 +141,7 @@ class JointPosition(object):
                                         self._camera.fps,
                                         self._camera.resolution)
                 if self._threed:
+                    self._rec_kinect.start(outfile + '-%i_kinect' % nr)
                     self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
                     self._rec_flash.start(outfile + '-%i_flash_white' % nr)
                 flash_screen(3, 0.5, 0.5)
@@ -146,6 +149,7 @@ class JointPosition(object):
                 if self._images:
                     self._rec_cam.stop()
                 if self._threed:
+                    self._rec_kinect.stop()
                     self._rec_senz3d.stop()
                     self._rec_flash.stop()
                 self._rec_joint.stop()
