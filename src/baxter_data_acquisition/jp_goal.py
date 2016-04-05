@@ -78,6 +78,8 @@ class JointPosition(object):
         ns = 'data/limb/' + self._arm + '/'
         self._pub_efft_des = rospy.Publisher(ns + 'efft/des', JointCommand,
                                              queue_size=10)
+        self._pub_pose_label = rospy.Publisher(ns + 'pose/label', UInt16,
+                                               queue_size=10)
 
         # torque control parameters
         self._rate = 1000.0  # Hz
@@ -186,6 +188,10 @@ class JointPosition(object):
             self._limb.set_joint_torques(tau_cmd)
             elapsed = rospy.get_time() - start
             control_rate.sleep()
+        # final position of the end effector defines label of the trajectory
+        pose = self._endpoint_pose()
+        label = self._ws.cluster_position(pose[:3])
+        self._pub_pose_label.publish(label)
         return True
 
     def _sample_torque(self):
@@ -213,3 +219,14 @@ class JointPosition(object):
             settings.tau_duration_min
         )
         return duration
+
+    def _endpoint_pose(self):
+        """ Current pose of the wrist of one arm of the baxter robot.
+        :return: pose [px, py, pz, or, op, oy, ow]
+        """
+        qp = self._limb.endpoint_pose()
+        return [
+            qp['position'][0], qp['position'][1], qp['position'][2],
+            qp['orientation'][0], qp['orientation'][1],
+            qp['orientation'][2], qp['orientation'][3]
+        ]
