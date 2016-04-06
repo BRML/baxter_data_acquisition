@@ -104,6 +104,8 @@ class JointPosition(object):
         self._rec_joint = JointRecorder(limb=self._arm,
                                         rate=settings.recording_rate,
                                         anomaly_mode='automatic')
+        self._head = baxter_interface.Head()
+
         if self._images:
             self._camera = baxter_interface.CameraController('head_camera')
             self._rec_cam = CameraRecorder()
@@ -165,6 +167,7 @@ class JointPosition(object):
         """
         print '\nRecord data %s anomalies into %s.' % \
               ('with' if self._anomalies else 'without', outfile)
+        self._head.set_pan(0.0)
         self._limb.move_to_neutral()
         try:
             for nr in range(self._number):
