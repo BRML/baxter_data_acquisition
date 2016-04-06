@@ -79,6 +79,8 @@ class JointPosition(object):
         self._limb_human = baxter_interface.Limb(self._arm_human)
         self._rec_joint_human = JointRecorder(limb=self._arm_human,
                                               rate=settings.recording_rate)
+        self._head = baxter_interface.Head()
+
         if self._threed:
             self._rec_kinect = KinectRecorder()
             self._rec_senz3d = SenzRecorder()
@@ -136,6 +138,7 @@ class JointPosition(object):
             thread.start()
 
         print '\nRecord handshake data into %s.' % outfile
+        self._head.set_pan(0.0)
         self._limb_robot.move_to_neutral()
         if (self._experiment == 'r-r' or
                 (self._experiment == 'r-h' and mode == 'robot')):

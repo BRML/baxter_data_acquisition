@@ -65,6 +65,7 @@ class JointPosition(object):
         self._limb = baxter_interface.Limb(self._arm)
         self._rec_joint = JointRecorder(limb=self._arm,
                                         rate=settings.recording_rate)
+        self._head = baxter_interface.Head()
 
         if self._images:
             cam = 'head_camera'
@@ -128,6 +129,7 @@ class JointPosition(object):
         without the extension(s).
         """
         print '\nRecord goal oriented motion data into %s.' % outfile
+        self._head.set_pan(0.0)
         self._limb.move_to_neutral()
         try:
             for nr in range(self._number):

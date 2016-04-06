@@ -140,6 +140,7 @@ class JointPosition(object):
 
         print '\nRecord data %s collisions into %s.' % \
               ('with' if self._collisions else 'without', outfile)
+        self._head.set_pan(0.0)
         self._limb.move_to_neutral()
         try:
             for nr in range(self._number):
