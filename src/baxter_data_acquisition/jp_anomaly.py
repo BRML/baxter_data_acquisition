@@ -43,6 +43,10 @@ from baxter_data_acquisition.face import flash_screen
 from baxter_data_acquisition.misc import set_dict
 from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
+from baxter_data_acquisition.suppression import (
+    AvoidanceSuppressor,
+    DetectionSuppressor
+)
 
 from control import (
     PidController,
@@ -165,6 +169,13 @@ class JointPosition(object):
         :param outfile: path and filename of the file(s) to write the data to,
         without the extension(s).
         """
+        threads = [
+            AvoidanceSuppressor(self._arm),
+            DetectionSuppressor(self._arm)
+        ]
+        for thread in threads:
+            thread.start()
+
         print '\nRecord data %s anomalies into %s.' % \
               ('with' if self._anomalies else 'without', outfile)
         self._head.set_pan(0.0)
@@ -192,6 +203,8 @@ class JointPosition(object):
                 self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
             pass
+        for thread in threads:
+            ret = thread.stop()
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self):
