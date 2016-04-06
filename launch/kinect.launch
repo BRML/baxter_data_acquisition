@@ -15,7 +15,7 @@
     <!-- Publish a static transform between the world and the base of the kinect -->
     <node pkg="tf2_ros" type="static_transform_publisher"
           name="foot_to_world"
-          args="$(arg x) $(arg y) $(arg z) 0 0 0 1 world stand_base"/>
+          args="$(arg x) $(arg y) $(arg z) 0 0 0 1 world footprint"/>
 
     <!-- Spawn the kinect sensor -->
     <node name="kinect_urdf_spawner" pkg="gazebo_ros" type="spawn_model"
