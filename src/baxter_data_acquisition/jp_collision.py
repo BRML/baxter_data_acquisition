@@ -30,7 +30,6 @@ import rospy
 
 from baxter_core_msgs.msg import JointCommand
 from std_msgs.msg import (
-    Bool,
     Float64MultiArray,
     UInt16
 )
@@ -72,6 +71,7 @@ class JointPosition(object):
         self._rec_joint = JointRecorder(limb=self._arm,
                                         rate=settings.recording_rate,
                                         anomaly_mode='manual')
+        self._head = baxter_interface.Head()
 
         if self._images:
             cam = 'head_camera'
@@ -80,8 +80,6 @@ class JointPosition(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
-        self._pub_nod = rospy.Publisher('robot/head/command_head_nod', Bool,
-                                        queue_size=10)
         ns = 'data/limb/' + self._arm
         self._pub_cfg_des = rospy.Publisher(ns + '/cfg/des', JointCommand,
                                             queue_size=10)
@@ -185,7 +183,7 @@ class JointPosition(object):
                     part = self._sampler.sample_body_part()
                     print '\tInduce collision on %s arm at %s' % \
                           (self._arm, part)
-                    self._pub_nod.publish(data=True)
+                    self._head.command_nod(timeout=0.0)
                     send_image(os.path.join(self._imgpath,
                                             'hit_%s.png' % part))
                     self._pub_anom.publish(data=[self._sampler.part2int(part),
