@@ -54,7 +54,8 @@ from control import (
 )
 from recorder import (
     CameraRecorder,
-    JointRecorder
+    FlashRecorder,
+    JointRecorder,
 )
 
 
@@ -108,7 +109,7 @@ class JointPosition(object):
             self._rec_cam = CameraRecorder()
         if self._threed:
             # TODO: set up Kinect recorder instance here
-            pass
+            self._rec_flash = FlashRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
@@ -176,10 +177,14 @@ class JointPosition(object):
                     self._rec_cam.start(outfile + '-%i' % nr,
                                         self._camera.fps,
                                         self._camera.resolution)
+                if self._threed:
+                    self._rec_flash.start(outfile + '-%i_flash_white' % nr)
                 flash_screen(3, 0.5, 0.5)
                 self._one_sample()
                 if self._images:
                     self._rec_cam.stop()
+                if self._threed:
+                    self._rec_flash.stop()
                 self._rec_joint.stop()
                 self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
