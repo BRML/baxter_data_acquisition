@@ -39,6 +39,7 @@ from std_msgs.msg import (
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
+from baxter_data_acquisition.face import flash_screen
 from baxter_data_acquisition.misc import set_dict
 from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
@@ -175,6 +176,7 @@ class JointPosition(object):
                     self._rec_cam.start(outfile + '-%i' % nr,
                                         self._camera.fps,
                                         self._camera.resolution)
+                flash_screen(3, 0.5, 0.5)
                 self._one_sample()
                 if self._images:
                     self._rec_cam.stop()
