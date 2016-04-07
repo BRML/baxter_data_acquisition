@@ -2,6 +2,7 @@
 
 <launch>
     <arg name="io_gui" default="true"/>
+    <arg name="depth" default="false"/>
     <!-- These arguments load the electric grippers, for example
          left_electric_gripper:=true -->
     <arg name="left_electric_gripper" default="true"/>
@@ -15,8 +16,9 @@
     <arg name="load_robot_description" default="true"/>
     <param if="$(arg load_robot_description)" name="robot_description"
            command="$(find xacro)/xacro.py
-                    --inorder $(find baxter_description)/urdf/baxter.urdf.xacro
-                    gazebo:=true"/>
+                    --inorder $(find baxter_data_acquisition)/urdf/baxter.urdf.xacro
+                    gazebo:=true
+                    depth:=$(arg depth)"/>
 
     <!-- Load the software version into the ROS Parameter Server -->
     <param name="rethink/software_version" value="1.2.0" />

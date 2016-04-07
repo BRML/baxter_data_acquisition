@@ -15,3 +15,4 @@ from joint_recorder import JointRecorder
 from flash_recorder import FlashRecorder
 
 from kinect_recorder import KinectRecorder
+from senz_recorder import SenzRecorder

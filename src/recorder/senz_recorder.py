@@ -27,32 +27,32 @@ from recorder import CameraRecorder
 from recorder.depth_recorder import DepthRecorder
 
 
-class KinectRecorder(object):
+class SenzRecorder(object):
     def __init__(self):
-        """ Kinect V2 sensor recorder class writing RGB images into a .avi
+        """ Senz3d sensor recorder class writing RGB images into a .avi
         video file and corresponding time stamps into an accompanying .txt
         file, as well as depth images into a .bin binary file and
         corresponding time stamps into an accompanying .txt file.
         :return:
         """
         self._rec_rgb = CameraRecorder()
-        self._rec_rgb.camera = '/kinect/rgb/image'
+        self._rec_rgb.camera = '/senz3d/rgb/image'
 
         self._rec_depth = DepthRecorder()
-        self._rec_depth.camera = '/kinect/depth/image'
+        self._rec_depth.camera = '/senz3d/depth/image'
 
     def start(self, outname):
-        """ Set up the Kinect recorder and record both RGB- and depth data.
+        """ Set up the Senz3d recorder and record both RGB- and depth data.
         :param outname: Filename to write the RGB- and depth data to, without
         the extension.
         """
         # record rgb image + time stamps
         self._rec_rgb.start(outname=outname + '_rgb',
-                            fps=30.0, imgsize=(1920, 1080))
+                            fps=30.0, imgsize=(1280, 720))
         # record depth image + time stamps
         self._rec_depth.start(outname=outname + '_depth')
 
     def stop(self):
-        """ Stop the Kinect recorder """
+        """ Stop the Senz3d recorder """
         self._rec_depth.stop()
         self._rec_rgb.stop()

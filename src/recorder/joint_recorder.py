@@ -37,7 +37,10 @@ from sensor_msgs.msg import (
     Imu,
     JointState
 )
-from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import (
+    UInt16,
+    Float64MultiArray
+)
 
 
 class JointRecorder(object):
@@ -88,7 +91,9 @@ class JointRecorder(object):
         self._sub_state = None
         self._sub_efft_comm = None
         self._sub_efft_gen = None
+        self._sub_efft_des = None
         self._sub_pose = None
+        self._sub_pose_label = None
 
     def start(self, outfile):
         """ Start joint data recording.
@@ -107,9 +112,11 @@ class JointRecorder(object):
         self._data['effort'] = dict()
         self._data['effort']['commanded'] = list()
         self._data['effort']['generated'] = list()
+        self._data['effort']['desired'] = list()
         self._data['effort']['measured'] = list()
         self._data['pose'] = dict()
         self._data['pose']['measured'] = list()
+        self._data['pose']['label'] = list()
 
         self._sub_acc = rospy.Subscriber('/robot/accelerometer/' + self._arm +
                                          '_accelerometer/state', Imu,
@@ -129,9 +136,14 @@ class JointRecorder(object):
                                                queue_size=1)
         self._sub_efft_gen = rospy.Subscriber(ns + '/efft/gen', JointCommand,
                                               self._cb_efft_gen, queue_size=1)
+        self._sub_efft_des = rospy.Subscriber(ns + '/efft/des', JointCommand,
+                                              self._cb_efft_des, queue_size=1)
         self._sub_pose = rospy.Subscriber('/robot/limb/' + self._arm +
                                           '/endpoint_state', EndpointState,
                                           self._cb_pose, queue_size=1)
+        self._sub_pose_label = rospy.Subscriber(ns + '/pose/label', UInt16,
+                                                self._cb_pose_label,
+                                                queue_size=1)
 
     def stop(self):
         """ Stop joint data recording. """
@@ -142,7 +154,9 @@ class JointRecorder(object):
         self._sub_state.unregister()
         self._sub_efft_comm.unregister()
         self._sub_efft_gen.unregister()
+        self._sub_efft_des.unregister()
         self._sub_pose.unregister()
+        self._sub_pose_label.unregister()
 
     def write_sample(self):
         """ Append data of one sample to the .hdf5 joint data file. """
@@ -165,7 +179,10 @@ class JointRecorder(object):
                         continue
                     gf = gm.require_dataset(field, shape=data.shape,
                                             dtype=data.dtype, data=data)
-                    gf.attrs.create('Header', data=self._header[modality])
+                    if modality == 'pose' and field == 'label':
+                        gf.attrs.create('Header', data=['time', 'index'])
+                    else:
+                        gf.attrs.create('Header', data=self._header[modality])
         print 'Done writing sample data to file.'
 
     def _cb_acc(self, data):
@@ -217,6 +234,10 @@ class JointRecorder(object):
         effort = list(data.command)
         self._data['effort']['generated'].append([rospy.get_time()] + effort)
 
+    def _cb_efft_des(self, data):
+        effort = list(data.command)
+        self._data['effort']['desired'].append([rospy.get_time()] + effort)
+
     def _cb_pose(self, data):
         pose = [data.pose.position.x,
                 data.pose.position.y,
@@ -226,6 +247,9 @@ class JointRecorder(object):
                 data.pose.orientation.z,
                 data.pose.orientation.w]
         self._data['pose']['measured'].append([rospy.get_time()] + pose)
+
+    def _cb_pose_label(self, data):
+        self._data['pose']['label'].append([rospy.get_time(), data.data])
 
     def get_header_acc(self):
         """ Return acceleration data header.

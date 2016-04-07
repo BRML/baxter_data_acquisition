@@ -19,21 +19,21 @@
         <arg name="headless" value="$(arg headless)"/>
     </include>
 
-    <!-- Load baxter model -->
+    <!-- Load (modified) baxter model -->
     <arg name="io_gui" default="false"/>
+    <arg name="depth_internal" default="false"/>
+
     <include file="$(find baxter_data_acquisition)/launch/baxter.launch">
         <arg name="io_gui" value="$(arg io_gui)"/>
+        <arg name="depth" value="$(arg depth_internal)"/>
     </include>
 
     <!-- Load external Kinect sensor -->
-    <!--<group ns="kinect">-->
-        <!--&lt;!&ndash;<arg name="tf_prefix" value="kinect_tf"/>&ndash;&gt;-->
-        <!--<arg name="tf_prefix" value=""/>-->
+    <arg name="depth_external" default="false"/>
 
-        <!--&lt;!&ndash;<param name="tf_prefix" value="$(arg tf_prefix)"/>&ndash;&gt;-->
-        <!--<include file="$(find baxter_data_acquisition)/launch/kinect.launch">-->
-            <!--<arg name="x" value="2.5"/>-->
-            <!--<arg name="tf_prefix" value="$(arg tf_prefix)"/>-->
-        <!--</include>-->
-    <!--</group>-->
+    <group if="$(arg depth_external)" ns="kinect">
+        <include file="$(find baxter_data_acquisition)/launch/kinect.launch">
+            <arg name="x" value="2.5"/>
+        </include>
+    </group>
 </launch>

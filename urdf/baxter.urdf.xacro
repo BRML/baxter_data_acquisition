@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+
+<robot name="baxter" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:arg name="gazebo" default="false"/>
+    <xacro:arg name="pedestal" default="true"/>
+    <xacro:arg name="depth" default="false"/>
+
+    <!-- Load Baxter URDF from Rethink Robotics -->
+    <xacro:include filename="$(find baxter_description)/urdf/baxter.urdf.xacro">
+        <xacro:arg name="gazebo" value="$(gazebo)"/>
+        <xacro:arg name="pedestal" value="$(pedestal)"/>
+    </xacro:include>
+
+    <!-- Depth sensor mounted on head_camera -->
+    <xacro:if value="$(arg depth)">
+        <xacro:include filename="$(find senz3d_description)/urdf/senz3d.xacro"/>
+        <xacro:sensor_senz3d prefix="/"
+                             name="senz3d"
+                             parent="head_camera"
+                             cam_px="0.0"
+                             cam_py="0.07"
+                             cam_pz="0.04"
+                             cam_or="0.0"
+                             cam_op="-0.4"
+                             cam_oy="-1.570796327"/>
+    </xacro:if>
+</robot>
