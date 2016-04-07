@@ -98,13 +98,16 @@ class PoseHandler(PoseConfigDuration):
             if key == 'y' or key == 'Y':
                 print 'yes'
                 pose = _endpoint_pose()
-                poses.append(pose)
                 cfg = limb.joint_angles()
-                cfg_ik = self._inverse_kinematics(pose, arm)
-                cfgs.append(cfg_ik)
                 print 'pose', pose
                 print 'cfg ', [cfg[jn] for jn in joint_names(arm)]
-                print 'ikin', list(cfg_ik)
+                try:
+                    cfg_ik = self._inverse_kinematics(pose, arm)
+                    poses.append(pose)
+                    cfgs.append(cfg_ik)
+                    print 'ikin', list(cfg_ik)
+                except ValueError as e:
+                    print "Failed to record pose due to ik failure. Repeat."
             elif key == 'n' or key == 'N':
                 print 'Writing recorded poses and configurations ...'
                 np.savetxt(os.path.join(path, 'poses.txt'), poses,
