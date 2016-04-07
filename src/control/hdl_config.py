@@ -52,12 +52,7 @@ class ConfigurationHandler(PoseConfigDuration):
         """
         if not isinstance(config, list) and len(config) != 7:
             raise ValueError("Configuration must be a list with 7 entries!")
-        try:
-            err = map(lambda x: np.sum(abs(x)), self._data - config)
-        except Exception:
-            raise
-        err = np.asarray(err)
-        return np.argmin(err)
+        return np.argmin(np.sum(abs(self._data - config), axis=1))
 
     def compute_configs(self):
         """ Compute configurations from a list of poses and store them in a

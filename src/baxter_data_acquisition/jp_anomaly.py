@@ -47,7 +47,6 @@ from control import (
     PidController,
     PID_DIRECT,
     BangBangInterpolator,
-    PoseHandler,
     ConfigurationHandler,
     DurationHandler
 )
@@ -80,8 +79,6 @@ class JointPosition(object):
         path = os.path.join(ns, 'data', 'setup')
         if not os.path.exists(path):
             os.makedirs(path)
-        pose_file = os.path.join(path, 'poses2.txt')
-        self._poses = PoseHandler(file_name=pose_file)
         config_file = os.path.join(path, 'configurations2.txt')
         self._configs = ConfigurationHandler(file_name=config_file)
         duration_file = os.path.join(path, 'durations2.txt')
@@ -251,12 +248,9 @@ class JointPosition(object):
         """ Trajectory planning """
         jns = settings.joint_names(self._arm)
         q_des = {a: b for a, b in zip(jns, self._configs[des_idx])}
-        # here using closest configuration for look-up of required duration;
-        # maybe closest pose makes more sense?
-        x_curr = self._endpoint_pose()
-        closest_idx = self._poses.get_closest_pose(pose=x_curr)
-        # closest_idx = self._configs.get_closest_config([q_curr[jn]
-        #                                                 for jn in jns])
+        # using closest configuration for look-up of required duration
+        closest_idx = self._configs.get_closest_config([q_curr[jn]
+                                                        for jn in jns])
         duration = self._durations.get_duration(closest_idx, des_idx)
         duration += settings.duration_offset
         steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
