@@ -52,12 +52,7 @@ class ConfigurationHandler(PoseConfigDuration):
         """
         if not isinstance(config, list) and len(config) != 7:
             raise ValueError("Configuration must be a list with 7 entries!")
-        try:
-            err = map(lambda x: np.sum(abs(x)), self._data - config)
-        except Exception:
-            raise
-        err = np.asarray(err)
-        return np.argmin(err)
+        return np.argmin(np.sum(abs(self._data - config), axis=1))
 
     def compute_configs(self):
         """ Compute configurations from a list of poses and store them in a
@@ -66,7 +61,7 @@ class ConfigurationHandler(PoseConfigDuration):
         """
         path = raw_input(" List-of-poses-file to load: ")
         poses = self.load_data(path)
-        arm = raw_input(" Compute poses for 'left' or 'right' arm: ")
+        arm = raw_input(" Compute configurations for 'left' or 'right' arm: ")
         if arm not in ['left', 'right']:
             raise ValueError("Must be 'left' or 'right' arm!")
         cfgs = np.empty((poses.shape[0], 7))
