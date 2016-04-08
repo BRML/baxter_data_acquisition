@@ -86,7 +86,7 @@ class DurationHandler(PoseConfigDuration):
         # interpolator; if successful, store found duration in map.
         durations = np.zeros((cfgs.shape[0], cfgs.shape[0]))
         zeros = set_dict(arm, *(0,)*7)
-        times = np.arange(start=0.5, stop=10.0, step=0.5)
+        times = np.arange(start=0.5, stop=15.0, step=0.15)
         for n in range(cfgs.shape[0]):
             for m in range(n+1, cfgs.shape[0]):
                 err = -1

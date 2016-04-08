@@ -88,7 +88,7 @@ class JointPosition(object):
             os.makedirs(path)
         config_file = os.path.join(path, 'configurations2.txt')
         self._configs = ConfigurationHandler(file_name=config_file)
-        duration_file = os.path.join(path, 'durations2.txt')
+        duration_file = os.path.join(path, 'durations3.txt')
         self._durations = DurationHandler(file_name=duration_file)
 
         path = os.path.join(ns, 'data', 'log')
