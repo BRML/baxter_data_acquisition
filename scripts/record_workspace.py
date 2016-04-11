@@ -25,6 +25,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import argparse
 import rospy
 
 import baxter_interface
@@ -55,7 +56,6 @@ def record(filename=None):
     key = raw_input("Test workspace corners? (y, n): ")
     if key == 'y' or key == 'Y':
         ph.test_poses()
-    print '\nDone.'
 
 
 def sample():
@@ -69,7 +69,21 @@ def sample():
     pass
 
 
-if __name__ == '__main__':
+def main():
+    """ Record poses defining the corners of the workspace of one limb of the
+    robot or sample and store configurations from within the workspace.
+    """
+    arg_fmt = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(formatter_class=arg_fmt,
+                                     description=main.__doc__)
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('-m', '--mode', required=True,
+                          choices=['record', 'sample'],
+                          help='The mode to execute.')
+    parser.add_argument('-f', '--file', required=False,
+                        type=str, default="",
+                        help='A file containing poses to load and test.')
+    args = parser.parse_args(rospy.myargv()[1:])
 
     print 'Initializing node ...'
     rospy.init_node('workspace_rec_smpl', anonymous=True)
@@ -77,4 +91,13 @@ if __name__ == '__main__':
     rob = Robot()
     rospy.on_shutdown(rob.disable())
 
-    fn = "/home/baxter/ros_ws/src/baxter_data_acquisition/data/setup/original/poses.txt"
+    if args.mode == 'record':
+        record(filename=args.file)
+    else:
+        sample()
+
+    print '\nDone.'
+
+
+if __name__ == '__main__':
+    main()
