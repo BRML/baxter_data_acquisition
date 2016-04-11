@@ -26,6 +26,7 @@
 import numpy as np
 import os
 import rospy
+from scipy.spatial import Delaunay
 
 from baxter_data_acquisition.settings import joint_names
 from hdl import PoseConfigDuration
@@ -128,3 +129,25 @@ class PoseHandler(PoseConfigDuration):
             cfg_ik = self._inverse_kinematics(self._data[idx, :], arm)
             cmd = dict(zip(joint_names(arm), cfg_ik))
             limb.move_to_joint_positions(cmd)
+
+    def sample(self):
+        # see http://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl
+        # or http://stackoverflow.com/questions/31404658/check-if-points-lies-inside-a-convex-hull
+        # or http://stackoverflow.com/questions/21727199/python-convex-hull-with-scipy-spatial-delaunay-how-to-eleminate-points-inside-t
+        """ Sample configurations within the workspace and store them.
+        """
+        hull = Delaunay(self._data)
+
+        n_configs = 300
+        configs = np.array((n_configs, 7))
+        idx = 0
+        while idx < n_configs:
+            cfg = np.random.random_sample((1, 7))
+            # transform to joint range
+            # transform to Cartesian space
+            pose = cfg
+            if  hull.find_simplex(pose) >= 0:
+                configs[idx, :] = cfg
+                idx += 1
+        np.savetxt(os.path.join(path+'configurations.txt'), configs,
+                   delimiter=',', header='s0, s1, e0, e1, w0, w1, w2')

@@ -58,15 +58,9 @@ def record(filename=None):
         ph.test_poses()
 
 
-def sample():
-    # compute convex hull of workspace corners
-    # do:
-    #   draw sample from joint space
-    #   convert to Cartesian space (Simulator---move to joint position)
-    #   if within convex hull:
-    #     add to database
-    # until enough points
-    pass
+def sample(filename=None):
+    ph = PoseHandler(filename)
+    ph.sample()
 
 
 def main():
