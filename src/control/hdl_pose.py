@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2016, BRML
 # All rights reserved.
 #
@@ -130,28 +128,3 @@ class PoseHandler(PoseConfigDuration):
             cfg_ik = self._inverse_kinematics(self._data[idx, :], arm)
             cmd = dict(zip(joint_names(arm), cfg_ik))
             limb.move_to_joint_positions(cmd)
-
-
-if __name__ == '__main__':
-    import baxter_interface
-    from baxter_interface import CHECK_VERSION
-
-    def clean_shutdown():
-        if not init_state:
-            print "Disabling robot..."
-            rs.disable()
-
-    print 'Initializing node ...'
-    rospy.init_node('pose_test', anonymous=True)
-    rospy.on_shutdown(clean_shutdown)
-
-    print "\nGetting robot state ... "
-    rs = baxter_interface.RobotEnable(CHECK_VERSION)
-    init_state = rs.state().enabled
-    print "Enabling robot... "
-    rs.enable()
-
-    ph = PoseHandler("/home/baxter/ros_ws/src/baxter_data_acquisition/data/setup/original/poses.txt")
-    print ph._data
-    ph.test_poses()
-    print '\nDone.'
