@@ -210,20 +210,21 @@ if __name__ == '__main__':
     pp.pprint(settings.kpid(limb))
 
     print '\ntest torque limits'
-    pp.pprint(settings.tau_max(limb))
+    tau_lim = settings.tau_lim(limb, scale=0.05)
+    pp.pprint(tau_lim)
 
     print '\nset up PID controller'
     pid = PidController(direction=DIRECT, kpid=settings.kpid(limb)[joint])
     print 'kp: ', pid.get_kp(), ' ki: ', pid.get_ki(), ' kd: ', pid.get_kd()
     print 'direction: ', pid.get_direction()
-    pid.set_output_limits(minmax=settings.tau_max(limb)[joint])
+    pid.set_output_limits(minmax=tau_lim[joint])
     print pid
 
     print '\nset up second PID controller'
     kp, ki, kd = settings.kpid(limb)[joint]
     pid2 = PidController(direction=REVERSE, kp=kp, ki=ki, kd=kd)
     print 'direction: ', pid2.get_direction()
-    outmin, outmax = settings.tau_max(limb)[joint]
+    outmin, outmax = tau_lim[joint]
     pid2.set_output_limits(outmin=outmin, outmax=outmax)
     print pid2
 
