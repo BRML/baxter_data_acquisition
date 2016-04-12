@@ -1,4 +1,6 @@
-/data
+data/*
+!data/setup
+
 *~
 
 # Byte-compiled / optimized / DLL files
