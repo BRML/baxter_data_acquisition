@@ -83,7 +83,7 @@ def main():
     rospy.init_node('workspace_rec_smpl', anonymous=True)
 
     rob = Robot()
-    rospy.on_shutdown(rob.disable())
+    rospy.on_shutdown(rob.disable)
 
     if args.mode == 'record':
         record(filename=args.file)
