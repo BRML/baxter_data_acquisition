@@ -70,7 +70,7 @@ class DurationHandler(PoseConfigDuration):
         path = raw_input(" List-of-configurations-file to load: ")
         cfgs = self.load_data(path)
 
-        arm = raw_input(" Compute poses for 'left' or 'right' arm: ")
+        arm = raw_input(" Compute durations for 'left' or 'right' arm: ")
         if arm not in ['left', 'right']:
             raise ValueError("Must be 'left' or 'right' arm!")
 
@@ -86,7 +86,7 @@ class DurationHandler(PoseConfigDuration):
         # interpolator; if successful, store found duration in map.
         durations = np.zeros((cfgs.shape[0], cfgs.shape[0]))
         zeros = set_dict(arm, *(0,)*7)
-        times = np.arange(start=0.5, stop=10.0, step=0.5)
+        times = np.arange(start=0.5, stop=50.0, step=0.5)
         for n in range(cfgs.shape[0]):
             for m in range(n+1, cfgs.shape[0]):
                 err = -1
