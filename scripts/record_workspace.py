@@ -31,7 +31,7 @@ import rospy
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
-from control import PoseHandler
+from control import PoseHandler, ConfigurationHandler
 
 
 class Robot(object):
@@ -66,6 +66,14 @@ def sample(filename):
     ph.sample()
 
 
+def test(filename):
+    """ Test configurations by moving through them one after the other.
+    :param filename: A file containing configurations, one per row.
+    """
+    ch = ConfigurationHandler(filename)
+    ch.test_configs()
+
+
 def main():
     """ Record poses defining the corners of the workspace of one limb of the
     robot or sample and store configurations from within the workspace.
@@ -75,7 +83,7 @@ def main():
                                      description=main.__doc__)
     required = parser.add_argument_group('required arguments')
     required.add_argument('-m', '--mode', required=True,
-                          choices=['record', 'sample'],
+                          choices=['record', 'sample', 'test'],
                           help='The mode to execute.')
     parser.add_argument('-f', '--file', required=False,
                         type=str, default="",
@@ -90,8 +98,10 @@ def main():
 
     if args.mode == 'record':
         record(filename=args.file)
-    else:
+    elif args.mode == 'sample':
         sample(filename=args.file)
+    else:
+        test(filename=args.file)
 
     print '\nDone.'
 
