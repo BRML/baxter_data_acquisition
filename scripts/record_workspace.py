@@ -48,7 +48,7 @@ class Robot(object):
             self._rs.disable()
 
 
-def record(filename=None):
+def record(filename):
     """ Move limb manually to record corners of the real robot's workspace.
     :param filename: A file containing poses to load for testing.
     """
@@ -58,7 +58,10 @@ def record(filename=None):
         ph.test_poses()
 
 
-def sample(filename=None):
+def sample(filename):
+    """ Sample configurations from within the real robot's workspace.
+    :param filename: A file containing poses defining the workspace corners.
+    """
     ph = PoseHandler(filename)
     ph.sample()
 
@@ -88,7 +91,7 @@ def main():
     if args.mode == 'record':
         record(filename=args.file)
     else:
-        sample()
+        sample(filename=args.file)
 
     print '\nDone.'
 
