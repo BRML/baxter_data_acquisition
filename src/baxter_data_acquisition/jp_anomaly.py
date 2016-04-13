@@ -88,7 +88,7 @@ class JointPosition(object):
             os.makedirs(path)
         config_file = os.path.join(path, 'configurations2.txt')
         self._configs = ConfigurationHandler(file_name=config_file)
-        duration_file = os.path.join(path, 'durations3.txt')
+        duration_file = os.path.join(path, 'durations2.txt')
         self._durations = DurationHandler(file_name=duration_file)
 
         path = os.path.join(ns, 'data', 'log')
@@ -277,13 +277,17 @@ class JointPosition(object):
         # using closest configuration for look-up of required duration
         closest_idx = self._configs.get_closest_config([q_curr[jn]
                                                         for jn in jns])
+        print "idx:", des_idx
         print "q_des:", q_des
         print "q_cur:", q_curr
         q_closest = {a: b for a, b in zip(jns, self._configs[closest_idx])}
         print "q_cst:", q_closest
         q_delta = {a: q_closest[a] - q_curr[a] for a in jns}
         print "q_dta:", q_delta
-        print "norm:", np.linalg.norm(q_delta.values())
+        print "norm cur-cst:", np.linalg.norm(q_delta.values())
+        print "norm cur-des:", np.linalg.norm({a: q_des[a] - q_curr[a] for a in jns}.values())
+        print "norm cst-des:", np.linalg.norm({a: q_des[a] - q_closest[a] for a in jns}.values())
+
         duration = self._durations.get_duration(closest_idx, des_idx)
         duration += settings.duration_offset
         steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
