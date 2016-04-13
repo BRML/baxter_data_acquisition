@@ -277,6 +277,13 @@ class JointPosition(object):
         # using closest configuration for look-up of required duration
         closest_idx = self._configs.get_closest_config([q_curr[jn]
                                                         for jn in jns])
+        print "q_des:", q_des
+        print "q_cur:", q_curr
+        q_closest = {a: b for a, b in zip(jns, self._configs[closest_idx])}
+        print "q_cst:", q_closest
+        q_delta = {a: q_closest[a] - q_curr[a] for a in jns}
+        print "q_dta:", q_delta
+        print "norm:", np.linalg.norm(q_delta.values())
         duration = self._durations.get_duration(closest_idx, des_idx)
         duration += settings.duration_offset
         steps, d_steps, err = self._ipl.interpolate(q_start=q_curr,
