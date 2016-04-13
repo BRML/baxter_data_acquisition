@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2016, BRML
 # All rights reserved.
 #
@@ -28,8 +26,16 @@
 import numpy as np
 import os
 import rospy
+from scipy.spatial import Delaunay
+from tf import transformations
 
-from baxter_data_acquisition.settings import joint_names
+import baxter_interface
+from baxter_pykdl import baxter_kinematics
+
+from baxter_data_acquisition.settings import (
+    joint_names,
+    q_lim
+)
 from hdl import PoseConfigDuration
 
 
@@ -73,10 +79,6 @@ class PoseHandler(PoseConfigDuration):
         :param path: Where to save 'poses.txt' and 'configurations.txt'.
         :return: A numpy array containing the recorded poses as rows.
         """
-        from tf import transformations
-
-        import baxter_interface
-
         def _endpoint_pose():
             """ Current pose of the wrist of one arm of the baxter robot.
             :return: pose [x, y, z, a, b, c]
@@ -131,27 +133,39 @@ class PoseHandler(PoseConfigDuration):
             cmd = dict(zip(joint_names(arm), cfg_ik))
             limb.move_to_joint_positions(cmd)
 
+    def sample(self):
+        """ Sample configurations within the workspace and store them. """
+        arm = raw_input(" Sample configurations for 'left' or 'right' arm: ")
+        if arm not in ['left', 'right']:
+            raise ValueError("Must be 'left' or 'right' arm!")
+        kin = baxter_kinematics(arm)
 
-if __name__ == '__main__':
-    import baxter_interface
-    from baxter_interface import CHECK_VERSION
+        hull = Delaunay(self._data[:, :3])
 
-    def clean_shutdown():
-        if not init_state:
-            print "Disabling robot..."
-            rs.disable()
-
-    print 'Initializing node ...'
-    rospy.init_node('pose_test', anonymous=True)
-    rospy.on_shutdown(clean_shutdown)
-
-    print "\nGetting robot state ... "
-    rs = baxter_interface.RobotEnable(CHECK_VERSION)
-    init_state = rs.state().enabled
-    print "Enabling robot... "
-    rs.enable()
-
-    ph = PoseHandler("/home/baxter/ros_ws/src/baxter_data_acquisition/data/setup/original/poses.txt")
-    print ph._data
-    ph.test_poses()
-    print '\nDone.'
+        n_configs = 300
+        configs = np.empty((n_configs, 7))
+        poses = np.empty((n_configs, 7))
+        idx = 0
+        lim = [q_lim(arm)[jn] for jn in joint_names(arm)]
+        while idx < n_configs:
+            # sample seven uniform random values
+            config = np.random.random_sample((7,))
+            # transform to joint range
+            config = [config[i]*(lim[i][1] - lim[i][0]) + lim[i][0]
+                      for i in range(len(config))]
+            cfg = {a: b for a, b in zip(joint_names(arm), config)}
+            # transform to Cartesian space using forward kinematics
+            pose = kin.forward_position_kinematics(joint_values=cfg)
+            # check if pose is in convex hull of workspace corners
+            if hull.find_simplex(pose[:3]) >= 0:
+                configs[idx, :] = config
+                poses[idx, :] = pose
+                idx += 1
+        print "\n"
+        path = raw_input(" Where to save poses2.txt and configurations2.txt: ")
+        if not os.path.exists(path):
+            os.makedirs(path)
+        np.savetxt(os.path.join(path, 'configurations2.txt'), configs,
+                   delimiter=',', header='s0, s1, e0, e1, w0, w1, w2')
+        np.savetxt(os.path.join(path, 'poses2.txt'), poses,
+                   delimiter=',', header='px, py, pz, ox, oy, oz, ow')

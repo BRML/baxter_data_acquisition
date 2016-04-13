@@ -70,7 +70,7 @@ class DurationHandler(PoseConfigDuration):
         path = raw_input(" List-of-configurations-file to load: ")
         cfgs = self.load_data(path)
 
-        arm = raw_input(" Compute poses for 'left' or 'right' arm: ")
+        arm = raw_input(" Compute durations for 'left' or 'right' arm: ")
         if arm not in ['left', 'right']:
             raise ValueError("Must be 'left' or 'right' arm!")
 
