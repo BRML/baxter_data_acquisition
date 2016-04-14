@@ -2,10 +2,18 @@
 
 <launch>
     <arg name="camera" default="true"/>
+    <arg name="depth" default="true"/>
 
     <!-- launch CameraRecorder server node -->
     <node if="$(arg camera)"
           pkg="baxter_data_acquisition" type="camera_server.py"
           name="camera_recorder_server"
           respawn="false" output="screen" cwd="node"/>
+
+    <group if="$(arg depth)">
+        <!-- launch Kinect Recorder server node -->
+        <node pkg="baxter_data_acquisition" type="kinect_server.py"
+              name="kinect_recorder_server"
+              respawn="false" output="screen" cwd="node"/>
+    </group>
 </launch>
