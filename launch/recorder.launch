@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+    <arg name="camera" default="true"/>
+
+    <!-- launch CameraRecorder server node -->
+    <node if="$(arg camera)"
+          pkg="baxter_data_acquisition" type="camera_server.py"
+          name="camera_recorder_server"
+          respawn="false" output="screen" cwd="node"/>
+</launch>
