@@ -46,7 +46,7 @@ from baxter_data_acquisition.suppression import (
 )
 
 from recorder import (
-    JointRecorder,
+    JointClient,
     FlashClient,
     KinectClient,
     SenzClient
@@ -74,11 +74,11 @@ class JointPosition(object):
         self._threed = threed
 
         self._limb_robot = baxter_interface.Limb(self._arm_robot)
-        self._rec_joint_robot = JointRecorder(limb=self._arm_robot,
-                                              rate=settings.recording_rate)
+        self._rec_joint_robot = JointClient(limb=self._arm_robot,
+                                            rate=settings.recording_rate)
         self._limb_human = baxter_interface.Limb(self._arm_human)
-        self._rec_joint_human = JointRecorder(limb=self._arm_human,
-                                              rate=settings.recording_rate)
+        self._rec_joint_human = JointClient(limb=self._arm_human,
+                                            rate=settings.recording_rate)
         self._head = baxter_interface.Head()
 
         if self._threed:

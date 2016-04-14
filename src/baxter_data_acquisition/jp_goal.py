@@ -40,7 +40,7 @@ from baxter_data_acquisition.workspace import Workspace
 from recorder import (
     CameraClient,
     FlashClient,
-    JointRecorder,
+    JointClient,
     KinectClient,
     SenzClient
 )
@@ -63,8 +63,8 @@ class JointPosition(object):
         self._sim = sim
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointRecorder(limb=self._arm,
-                                        rate=settings.recording_rate)
+        self._rec_joint = JointClient(limb=self._arm,
+                                      rate=settings.recording_rate)
         self._head = baxter_interface.Head()
 
         if self._images:
