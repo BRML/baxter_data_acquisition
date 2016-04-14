@@ -30,6 +30,8 @@ import rospy
 
 from sensor_msgs.msg import Image
 
+from baxter_data_acquisition.srv import Trigger
+
 
 class CameraRecorder(object):
     def __init__(self):
@@ -108,3 +110,34 @@ class CameraRecorder(object):
     @camera.setter
     def camera(self, camera):
         self._camera = camera
+
+
+def camera_client_start(outname, fps, imgsize):
+    """ Start camera recorder hosted on camera recorder server.
+    :param outname: Filename to write the video and text file to, without
+    the extension.
+    :param fps: Frames per second for video file.
+    :param imgsize: Size (width, height) of images to write into video
+    file.
+    :return: (bool success, string message)
+    """
+    rospy.wait_for_service('camera_server')
+    try:
+        trigger = rospy.ServiceProxy('camera_server', Trigger)
+        resp = trigger(on=True, outname=outname, fps=fps, size=imgsize)
+        return resp.success, resp.message
+    except rospy.ServiceException as e:
+        print 'Service call failed: %s' % e
+
+
+def camera_client_stop():
+    """ Stop camera recorder hosted on camera recorder server.
+    :return: (bool success, string message)
+    """
+    rospy.wait_for_service('camera_server')
+    try:
+        trigger = rospy.ServiceProxy('camera_server', Trigger)
+        resp = trigger(on=False)
+        return resp.success, resp.message
+    except rospy.ServiceException as e:
+        print 'Service call failed: %s' % e

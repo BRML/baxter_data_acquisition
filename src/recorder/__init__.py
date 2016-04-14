@@ -8,7 +8,11 @@ recording joint configurations, joint torques, Cartesian acceleration as well
 as anomaly commands from one of the robot's limbs.
 """
 
-from camera_recorder import CameraRecorder
+from camera_recorder import (
+    CameraRecorder,
+    camera_client_start,
+    camera_client_stop
+)
 
 from joint_recorder import JointRecorder
 
