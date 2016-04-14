@@ -112,32 +112,35 @@ class CameraRecorder(object):
         self._camera = camera
 
 
-def camera_client_start(outname, fps, imgsize):
-    """ Start camera recorder hosted on camera recorder server.
-    :param outname: Filename to write the video and text file to, without
-    the extension.
-    :param fps: Frames per second for video file.
-    :param imgsize: Size (width, height) of images to write into video
-    file.
-    :return: (bool success, string message)
-    """
-    rospy.wait_for_service('camera_server')
-    try:
-        trigger = rospy.ServiceProxy('camera_server', Trigger)
-        resp = trigger(on=True, outname=outname, fps=fps, size=imgsize)
-        return resp.success, resp.message
-    except rospy.ServiceException as e:
-        print 'Service call failed: %s' % e
+class CameraClient(object):
+    def __init__(self):
+        self._service_name = 'camera_service'
 
+    def start(self, outname, fps, imgsize):
+        """ Start camera recorder hosted on camera recorder server.
+        :param outname: Filename to write the video and text file to, without
+        the extension.
+        :param fps: Frames per second for video file.
+        :param imgsize: Size (width, height) of images to write into video
+        file.
+        :return: (bool success, string message)
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, Trigger)
+            resp = trigger(on=True, outname=outname, fps=fps, size=imgsize)
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
 
-def camera_client_stop():
-    """ Stop camera recorder hosted on camera recorder server.
-    :return: (bool success, string message)
-    """
-    rospy.wait_for_service('camera_server')
-    try:
-        trigger = rospy.ServiceProxy('camera_server', Trigger)
-        resp = trigger(on=False)
-        return resp.success, resp.message
-    except rospy.ServiceException as e:
-        print 'Service call failed: %s' % e
+    def stop(self):
+        """ Stop camera recorder hosted on camera recorder server.
+        :return: (bool success, string message)
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, Trigger)
+            resp = trigger(on=False)
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e

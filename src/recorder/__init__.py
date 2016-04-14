@@ -10,8 +10,7 @@ as anomaly commands from one of the robot's limbs.
 
 from camera_recorder import (
     CameraRecorder,
-    camera_client_start,
-    camera_client_stop
+    CameraClient
 )
 
 from joint_recorder import JointRecorder
