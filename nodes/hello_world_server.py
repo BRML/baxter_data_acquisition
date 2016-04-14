@@ -16,6 +16,7 @@ def stop():
 
 
 def handle_trigger(req):
+    print req
     if req.on:
         resp = start()
     else:

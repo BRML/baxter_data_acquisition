@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <launch>
+    <arg name="joint" default="true"/>
     <arg name="camera" default="true"/>
     <arg name="depth" default="true"/>
     <arg name="flash" default="true"/>
+
+    <!-- launch JointRecorder server node -->
+    <node if="$(arg joint)"
+          pkg="baxter_data_acquisition" type="joint_server.py"
+          name="joint_recorder_server"
+          respawn="false" output="screen" cwd="node"/>
 
     <!-- launch CameraRecorder server node -->
     <node if="$(arg camera)"

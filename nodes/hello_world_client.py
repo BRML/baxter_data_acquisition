@@ -7,11 +7,11 @@ from baxter_data_acquisition.srv import Trigger
 
 
 def trigger_client(b):
-    rospy.wait_for_service('camera_server')
+    rospy.wait_for_service('joint_service')
     try:
-        trigger = rospy.ServiceProxy('camera_server', Trigger)
-        resp = trigger(on=b, outname='test2', fps=14, size=(1280, 800))
-        return resp.success, resp.message
+        trigger = rospy.ServiceProxy('joint_service', Trigger)
+        resp = trigger(modality=b)
+        return resp.success, resp.message, resp.header
     except rospy.ServiceException as e:
         print 'Service call failed: %s' % e
 
@@ -22,7 +22,7 @@ def usage():
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
-        b = sys.argv[1].lower() in ('start', 'true', '1')
+        b = sys.argv[1]  # .lower() in ('start', 'true', '1')
     else:
         print usage()
         sys.exit(1)

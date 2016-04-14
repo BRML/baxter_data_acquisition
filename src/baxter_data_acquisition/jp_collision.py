@@ -47,7 +47,7 @@ from baxter_data_acquisition.suppression import (
 
 from recorder import (
     CameraClient,
-    JointRecorder
+    JointClient
 )
 
 
@@ -68,9 +68,9 @@ class JointPosition(object):
         self._sim = sim
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointRecorder(limb=self._arm,
-                                        rate=settings.recording_rate,
-                                        anomaly_mode='manual')
+        self._rec_joint = JointClient(limb=self._arm,
+                                      rate=settings.recording_rate,
+                                      anomaly_mode='manual')
         self._head = baxter_interface.Head()
 
         if self._images:

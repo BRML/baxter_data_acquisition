@@ -1,0 +1,9 @@
+string setup  # set up joint recorder instance
+              # "limb, recording rate, anomaly mode"
+string task  # trigger 'on', 'off', 'write'
+string outname  # path and file name to write the data to, without the extension
+string modality  # header from which modality should be returned
+---
+bool success  # indicate successful run of triggered service
+string message  # informational, e.g., for error messages
+string[] header  # returned header for requested modality

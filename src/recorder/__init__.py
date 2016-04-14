@@ -13,7 +13,10 @@ from camera_recorder import (
     CameraRecorder
 )
 
-from joint_recorder import JointRecorder
+from joint_recorder import (
+    JointClient,
+    JointRecorder
+)
 
 from flash_recorder import (
     FlashClient,
