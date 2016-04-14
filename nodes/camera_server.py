@@ -27,7 +27,10 @@
 
 import rospy
 
-from baxter_data_acquisition.srv import Trigger, TriggerResponse
+from baxter_data_acquisition.srv import (
+    Trigger,
+    TriggerResponse
+)
 from recorder import CameraRecorder
 
 
@@ -37,24 +40,37 @@ class Handler(object):
         self._running = False
 
     def handle_trigger(self, req):
+        """ Handler handle for the camera recorder server.
+        Gets a request service message, specified by Trigger.srv, to start or
+        stop the baxter head camera recorder and returns a boolean response
+        indicating the successful triggering of the service as well as a
+        descriptive message.
+        :param req: A Trigger request service message.
+        :returns: A TriggerResponse(bool success, string message).
+        """
         if req.on and not self._running:
             self._running = True
-            resp = self._cr.start(outname=req.outname, fps=req.fps, imgsize=req.size)
-            msg = "Started camera recorder"
+            resp = self._cr.start(outname=req.outname,
+                                  fps=req.fps,
+                                  imgsize=req.size)
+            msg = "Started camera recorder."
         elif not req.on and self._running:
             self._running = False
             resp = self._cr.stop()
-            msg = "Stopped camera recorder"
+            msg = "Stopped camera recorder."
         else:
             resp = False
-            msg = "Already/not yet running"
+            msg = "Camera recorder already/not yet running."
         print msg
         return TriggerResponse(success=resp, message=msg)
 
 
 if __name__ == "__main__":
+    """ A server for recording time-stamped videos from baxter's head camera.
+    A ROS service server hosting a CameraRecorder instance in a ROS node.
+    """
     rospy.init_node('camera_server')
     h = Handler()
     s = rospy.Service('camera_server', Trigger, h.handle_trigger)
-    print 'Ready to get triggered.'
+    print 'Camera recorder ready to get triggered.'
     rospy.spin()
