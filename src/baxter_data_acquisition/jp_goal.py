@@ -38,7 +38,7 @@ import baxter_data_acquisition.settings as settings
 from baxter_data_acquisition.workspace import Workspace
 
 from recorder import (
-    CameraRecorder,
+    CameraClient,
     FlashRecorder,
     JointRecorder,
     KinectRecorder,
@@ -70,7 +70,7 @@ class JointPosition(object):
         if self._images:
             cam = 'head_camera'
             self._camera = baxter_interface.CameraController(cam, self._sim)
-            self._rec_cam = CameraRecorder()
+            self._rec_cam = CameraClient()
         if self._threed:
             self._rec_senz3d = SenzRecorder()
             self._rec_kinect = KinectRecorder()

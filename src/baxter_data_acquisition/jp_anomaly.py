@@ -51,7 +51,7 @@ from control import (
     DurationHandler
 )
 from recorder import (
-    CameraRecorder,
+    CameraClient,
     JointRecorder
 )
 
@@ -101,7 +101,7 @@ class JointPosition(object):
                                         anomaly_mode='automatic')
         if self._images:
             self._camera = baxter_interface.CameraController('head_camera')
-            self._rec_cam = CameraRecorder()
+            self._rec_cam = CameraClient()
         if self._threed:
             # TODO: set up Kinect recorder instance here
             pass
