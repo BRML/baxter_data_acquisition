@@ -15,7 +15,10 @@ from camera_recorder import (
 
 from joint_recorder import JointRecorder
 
-from flash_recorder import FlashRecorder
+from flash_recorder import (
+    FlashClient,
+    FlashRecorder
+)
 
 from kinect_recorder import (
     KinectClient,

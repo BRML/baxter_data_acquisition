@@ -3,6 +3,7 @@
 <launch>
     <arg name="camera" default="true"/>
     <arg name="depth" default="true"/>
+    <arg name="flash" default="true"/>
 
     <!-- launch CameraRecorder server node -->
     <node if="$(arg camera)"
@@ -18,7 +19,13 @@
 
         <!-- launch Senz3d Recorder server node -->
         <node pkg="baxter_data_acquisition" type="senz_server.py"
-              name="senz_recorder_server"
+              name="senz3d_recorder_server"
               respawn="false" output="screen" cwd="node"/>
     </group>
+
+    <!-- launch FlashRecorder server node -->
+    <node if="$(arg flash)"
+          pkg="baxter_data_acquisition" type="flash_server.py"
+          name="flash_recorder_server"
+          respawn="false" output="screen" cwd="node"/>
 </launch>
