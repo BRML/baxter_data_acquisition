@@ -17,5 +17,8 @@ from joint_recorder import JointRecorder
 
 from flash_recorder import FlashRecorder
 
-from kinect_recorder import KinectRecorder
+from kinect_recorder import (
+    KinectClient,
+    KinectRecorder
+)
 from senz_recorder import SenzRecorder
