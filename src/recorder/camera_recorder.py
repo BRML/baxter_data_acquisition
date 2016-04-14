@@ -68,7 +68,7 @@ class CameraRecorder(object):
                                      isColor=True)
         if not self._clip.isOpened():
             print "ERROR-start-Problem with opening VideoWriter."
-            raise
+            raise IOError('Problem with opening VideoWriter!')
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
         return self._clip.isOpened() and not self._fp.closed
