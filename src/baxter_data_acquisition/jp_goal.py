@@ -41,7 +41,7 @@ from recorder import (
     CameraClient,
     FlashRecorder,
     JointRecorder,
-    KinectRecorder,
+    KinectClient,
     SenzRecorder
 )
 
@@ -73,7 +73,7 @@ class JointPosition(object):
             self._rec_cam = CameraClient()
         if self._threed:
             self._rec_senz3d = SenzRecorder()
-            self._rec_kinect = KinectRecorder()
+            self._rec_kinect = KinectClient()
             self._rec_flash = FlashRecorder()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',

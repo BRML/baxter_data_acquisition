@@ -48,7 +48,7 @@ from baxter_data_acquisition.suppression import (
 from recorder import (
     JointRecorder,
     FlashRecorder,
-    KinectRecorder,
+    KinectClient,
     SenzRecorder
 )
 
@@ -82,7 +82,7 @@ class JointPosition(object):
         self._head = baxter_interface.Head()
 
         if self._threed:
-            self._rec_kinect = KinectRecorder()
+            self._rec_kinect = KinectClient()
             self._rec_senz3d = SenzRecorder()
             self._rec_flash = FlashRecorder()
 
