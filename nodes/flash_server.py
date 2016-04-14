@@ -51,11 +51,11 @@ class Handler(object):
         if req.on and not self._running:
             self._running = True
             resp = self._fr.start(outname=req.outname)
-            msg = "Started Flash recorder."
+            msg = "Started flash recorder."
         elif not req.on and self._running:
             self._running = False
             resp = self._fr.stop()
-            msg = "Stopped Flash recorder."
+            msg = "Stopped flash recorder."
         else:
             resp = False
             msg = "Flash recorder already/not yet running."

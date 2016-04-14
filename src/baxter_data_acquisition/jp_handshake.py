@@ -47,7 +47,7 @@ from baxter_data_acquisition.suppression import (
 
 from recorder import (
     JointRecorder,
-    FlashRecorder,
+    FlashClient,
     KinectClient,
     SenzClient
 )
@@ -84,7 +84,7 @@ class JointPosition(object):
         if self._threed:
             self._rec_kinect = KinectClient()
             self._rec_senz3d = SenzClient()
-            self._rec_flash = FlashRecorder()
+            self._rec_flash = FlashClient()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
