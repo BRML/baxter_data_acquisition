@@ -15,5 +15,10 @@
         <node pkg="baxter_data_acquisition" type="kinect_server.py"
               name="kinect_recorder_server"
               respawn="false" output="screen" cwd="node"/>
+
+        <!-- launch Senz3d Recorder server node -->
+        <node pkg="baxter_data_acquisition" type="senz_server.py"
+              name="senz_recorder_server"
+              respawn="false" output="screen" cwd="node"/>
     </group>
 </launch>

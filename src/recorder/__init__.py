@@ -21,4 +21,7 @@ from kinect_recorder import (
     KinectClient,
     KinectRecorder
 )
-from senz_recorder import SenzRecorder
+from senz_recorder import (
+    SenzClient,
+    SenzRecorder
+)

@@ -42,7 +42,7 @@ from recorder import (
     FlashRecorder,
     JointRecorder,
     KinectClient,
-    SenzRecorder
+    SenzClient
 )
 
 
@@ -72,7 +72,7 @@ class JointPosition(object):
             self._camera = baxter_interface.CameraController(cam, self._sim)
             self._rec_cam = CameraClient()
         if self._threed:
-            self._rec_senz3d = SenzRecorder()
+            self._rec_senz3d = SenzClient()
             self._rec_kinect = KinectClient()
             self._rec_flash = FlashRecorder()
 
