@@ -56,7 +56,7 @@ from control import (
     DurationHandler
 )
 from recorder import (
-    CameraRecorder,
+    CameraClient,
     FlashRecorder,
     JointRecorder,
     KinectRecorder
@@ -110,7 +110,7 @@ class JointPosition(object):
 
         if self._images:
             self._camera = baxter_interface.CameraController('head_camera')
-            self._rec_cam = CameraRecorder()
+            self._rec_cam = CameraClient()
         if self._threed:
             self._rec_kinect = KinectRecorder()
             self._rec_flash = FlashRecorder()

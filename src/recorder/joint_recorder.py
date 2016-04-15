@@ -25,6 +25,7 @@
 
 import h5py
 import numpy as np
+import os
 import re
 
 import rospy
@@ -41,6 +42,8 @@ from std_msgs.msg import (
     UInt16,
     Float64MultiArray
 )
+
+from baxter_data_acquisition.srv import JointTrigger
 
 
 class JointRecorder(object):
@@ -160,7 +163,11 @@ class JointRecorder(object):
 
     def write_sample(self):
         """ Append data of one sample to the .hdf5 joint data file. """
-        with h5py.File(self._filename, 'a') as fp:
+        if not os.path.exists(self._filename):
+            mode = 'w'
+        else:
+            mode = 'a'
+        with h5py.File(self._filename, mode) as fp:
             idx = len(fp)
             g = fp.require_group('%i' % idx)
             for modality in self._data:
@@ -183,7 +190,7 @@ class JointRecorder(object):
                         gf.attrs.create('Header', data=['time', 'index'])
                     else:
                         gf.attrs.create('Header', data=self._header[modality])
-        print 'Done writing sample data to file.'
+        # print 'Done writing sample data to file.'
 
     def _cb_acc(self, data):
         acc = data.linear_acceleration
@@ -284,3 +291,123 @@ class JointRecorder(object):
         :return: Pose data header.
         """
         return self._header['pose']
+
+
+class JointClient(object):
+    def __init__(self, limb, rate, anomaly_mode='none'):
+        """ Joint recorder class writing baxter joint data into a .hdf5 file,
+        where the index gives the sample number, containing modalities
+        ('configuration', 'effort', 'anomaly', 'acceleration') and their
+        corresponding fields ('measured', 'commanded'), if appropriate.
+        :param limb: The limb to record data from ['left', 'right'].
+        :param rate: The desired recording rate.
+        :param anomaly_mode: Type of anomaly in the data ['manual',
+        'automatic', 'none'].
+        """
+        self._service_name = 'joint_service'
+
+        # set up JointRecorder instance on server node
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(setup='%s, %s, %s' % (limb, rate, anomaly_mode))
+            if not resp.success:
+                raise ValueError("Unable to set up JointRecorder instance!")
+            rospy.loginfo(resp.message)
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def start(self, outfile):
+        """ Start joint recorder hosted on joint recorder server.
+        :param outfile: Filename to write the data to, without the extension.
+        :return: (bool success, string message)
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(task='on', outname=outfile)
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def stop(self):
+        """ Stop joint recorder hosted on joint recorder server.
+        :return: (bool success, string message)
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(task='off')
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def write_sample(self):
+        """ Append data of one sample to the .hdf5 joint data file. """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(task='write')
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def get_header_acc(self):
+        """ Return acceleration data header.
+        :return: The acceleration header.
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(modality='acceleration')
+            return resp.header
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def get_header_anom(self):
+        """ Return anomaly data header.
+        :return: The anomaly header.
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(modality='anomaly')
+            return resp.header
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def get_header_cfg(self):
+        """ Return configuration data header.
+        :return: The configuration header.
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(modality='configuration')
+            return resp.header
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def get_header_efft(self):
+        """ Return effort data header.
+        :return: The effort header.
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(modality='effort')
+            return resp.header
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def get_header_pose(self):
+        """ Return pose data header.
+        :return: The pose header.
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
+            resp = trigger(modality='pose')
+            return resp.header
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e

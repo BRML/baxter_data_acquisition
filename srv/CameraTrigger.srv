@@ -1,0 +1,7 @@
+bool on  # trigger 'on' (true) or 'off' (false)
+string outname  # Path and file name to write the data to, without the extension
+int8 fps  # frames per second for video file
+int16[] size  # size (width, height) for frames in video file
+---
+bool success  # indicate successful run of triggered service
+string message  # informational, e.g., for error messages

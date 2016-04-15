@@ -46,8 +46,8 @@ from baxter_data_acquisition.suppression import (
 )
 
 from recorder import (
-    CameraRecorder,
-    JointRecorder
+    CameraClient,
+    JointClient
 )
 
 
@@ -68,15 +68,15 @@ class JointPosition(object):
         self._sim = sim
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointRecorder(limb=self._arm,
-                                        rate=settings.recording_rate,
-                                        anomaly_mode='manual')
+        self._rec_joint = JointClient(limb=self._arm,
+                                      rate=settings.recording_rate,
+                                      anomaly_mode='manual')
         self._head = baxter_interface.Head()
 
         if self._images:
             cam = 'head_camera'
             self._camera = baxter_interface.CameraController(cam, self._sim)
-            self._rec_cam = CameraRecorder()
+            self._rec_cam = CameraClient()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)

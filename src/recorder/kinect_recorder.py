@@ -23,6 +23,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import rospy
+
+from baxter_data_acquisition.srv import Trigger
 from recorder import CameraRecorder
 from recorder.depth_recorder import DepthRecorder
 
@@ -56,3 +59,34 @@ class KinectRecorder(object):
         """ Stop the Kinect recorder """
         self._rec_depth.stop()
         self._rec_rgb.stop()
+
+
+class KinectClient(object):
+    def __init__(self):
+        self._service_name = 'kinect_service'
+
+    def start(self, outname):
+        """ Start Kinect recorder hosted on Kinect recorder server.
+        :param outname: Filename to write the RGB- and depth data to, without
+        the extension.
+        :return: (bool success, string message)
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, Trigger)
+            resp = trigger(on=True, outname=outname)
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
+
+    def stop(self):
+        """ Stop Kinect recorder hosted on Kinect recorder server.
+        :return: (bool success, string message)
+        """
+        rospy.wait_for_service(self._service_name)
+        try:
+            trigger = rospy.ServiceProxy(self._service_name, Trigger)
+            resp = trigger(on=False)
+            return resp.success, resp.message
+        except rospy.ServiceException as e:
+            print 'Service call failed: %s' % e
