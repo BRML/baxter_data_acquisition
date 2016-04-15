@@ -93,7 +93,9 @@ class JointPosition(object):
         self._configs = ConfigurationHandler(file_name=config_file)
         duration_file = os.path.join(path, 'durations2.txt')
         self._durations = DurationHandler(file_name=duration_file)
-        print np.max(np.max(self._durations))
+        self._timeout = (np.max(np.max(self._durations)) +
+                         settings.duration_offset +
+                         0.05)
 
         path = os.path.join(ns, 'data', 'log')
         if not os.path.exists(path):
@@ -248,7 +250,7 @@ class JointPosition(object):
             self._move_to_joint_positions(des_idx=idx, dq_des=zeros,
                                           kpid=kpid, tau_lim=tau_lim,
                                           anomaly_pars=anomaly_pars,
-                                          timeout=15.5)
+                                          timeout=self._timeout)
 
         self._limb.move_to_neutral()
         return True
