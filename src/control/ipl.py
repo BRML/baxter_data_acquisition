@@ -67,7 +67,7 @@ class JointInterpolatedTrajectory(object):
 
     def dbg_msg(self, text):
         if self._debug:
-            rospy.logwarn(text)
+            rospy.logerr(text)
 
     def test(self):
         """ Test interpolator by visual inspection. """
