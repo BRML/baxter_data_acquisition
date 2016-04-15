@@ -57,9 +57,9 @@ from control import (
 )
 from recorder import (
     CameraClient,
-    FlashRecorder,
-    JointRecorder,
-    KinectRecorder
+    FlashClient,
+    JointClient,
+    KinectClient
 )
 
 
@@ -103,17 +103,17 @@ class JointPosition(object):
                                          debug=True)
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointRecorder(limb=self._arm,
-                                        rate=settings.recording_rate,
-                                        anomaly_mode='automatic')
+        self._rec_joint = JointClient(limb=self._arm,
+                                      rate=settings.recording_rate,
+                                      anomaly_mode='automatic')
         self._head = baxter_interface.Head()
 
         if self._images:
             self._camera = baxter_interface.CameraController('head_camera')
             self._rec_cam = CameraClient()
         if self._threed:
-            self._rec_kinect = KinectRecorder()
-            self._rec_flash = FlashRecorder()
+            self._rec_kinect = KinectClient()
+            self._rec_flash = FlashClient()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
