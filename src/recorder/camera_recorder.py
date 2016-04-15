@@ -30,7 +30,7 @@ import rospy
 
 from sensor_msgs.msg import Image
 
-from baxter_data_acquisition.srv import Trigger
+from baxter_data_acquisition.srv import CameraTrigger
 
 
 class CameraRecorder(object):
@@ -127,7 +127,7 @@ class CameraClient(object):
         """
         rospy.wait_for_service(self._service_name)
         try:
-            trigger = rospy.ServiceProxy(self._service_name, Trigger)
+            trigger = rospy.ServiceProxy(self._service_name, CameraTrigger)
             resp = trigger(on=True, outname=outname, fps=fps, size=imgsize)
             return resp.success, resp.message
         except rospy.ServiceException as e:
@@ -139,7 +139,7 @@ class CameraClient(object):
         """
         rospy.wait_for_service(self._service_name)
         try:
-            trigger = rospy.ServiceProxy(self._service_name, Trigger)
+            trigger = rospy.ServiceProxy(self._service_name, CameraTrigger)
             resp = trigger(on=False)
             return resp.success, resp.message
         except rospy.ServiceException as e:
