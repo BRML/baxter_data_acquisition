@@ -326,6 +326,7 @@ class JointPosition(object):
                 if anomaly_pars is not None:
                     """ Anomaly execution """
                     if count == anomaly_start:
+                        print " Inducing anomaly on joint", joint
                         kp_mod = kpid[joint][0]*pm
                         ki_mod = kpid[joint][1]*im
                         kd_mod = kpid[joint][2]*dm
@@ -354,9 +355,9 @@ class JointPosition(object):
                 rate.sleep()
                 t_elapsed = rospy.get_time()-t_start
             if count >= steps.shape[0]:
-                print "Arrived at desired configuration."
+                print " Arrived at desired configuration."
             if t_elapsed >= timeout:
-                print "Motion timed out."
+                print " Motion timed out."
             return True
         return False
 
