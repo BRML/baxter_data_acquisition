@@ -360,15 +360,6 @@ class JointPosition(object):
             return True
         return False
 
-    def _endpoint_pose(self):
-        """ Current pose of the wrist of one arm of the baxter robot.
-        :return: pose [x, y, z, a, b, c]
-        """
-        qp = self._limb.endpoint_pose()
-        r = transformations.euler_from_quaternion(qp['orientation'])
-        return [qp['position'][0], qp['position'][1], qp['position'][2],
-                r[0], r[1], r[2]]
-
     def _select_configurations(self):
         """ Select 10 configurations from the list of configurations.
         :return: Indices of 10 selected configurations from the list of
