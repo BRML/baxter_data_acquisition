@@ -51,7 +51,7 @@ interpolator_rate = 150
 duration_offset = 0.5  # 2.95
 
 # interpolator maximum joint velocity scale
-dq_scale = 1.0  # 0.4
+dq_scale = 0.4  # 1.0
 
 
 def joint_names(limb):

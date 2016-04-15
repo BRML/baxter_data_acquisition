@@ -24,7 +24,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
+import rospy
 
+import baxter_interface
+
+from baxter_data_acquisition.settings import joint_names
 from hdl import PoseConfigDuration
 
 
@@ -77,3 +81,18 @@ class ConfigurationHandler(PoseConfigDuration):
         np.savetxt(path, cfgs, delimiter=',')
 
         return cfgs
+
+    def test_configs(self):
+        """ Test configurations in self._data by moving through them one
+        after the other.
+        """
+        arm = raw_input(" Test configurations for 'left' or 'right' arm: ")
+        if arm not in ['left', 'right']:
+            raise ValueError("Must be 'left' or 'right' arm!")
+        limb = baxter_interface.Limb(arm)
+
+        for idx in range(self._data.shape[0]):
+            if rospy.is_shutdown():
+                break
+            cmd = {a: b for a, b in zip(joint_names(arm), self._data[idx, :])}
+            limb.move_to_joint_positions(cmd)

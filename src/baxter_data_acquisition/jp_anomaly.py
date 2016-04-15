@@ -76,7 +76,7 @@ class JointPosition(object):
         self._threed = threed
 
         ns = rospkg.RosPack().get_path('baxter_data_acquisition')
-        path = os.path.join(ns, 'data', 'setup')
+        path = os.path.join(ns, 'data', 'setup', 'new')
         if not os.path.exists(path):
             os.makedirs(path)
         config_file = os.path.join(path, 'configurations2.txt')

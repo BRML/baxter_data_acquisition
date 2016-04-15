@@ -73,8 +73,9 @@ class PoseConfigDuration(Sequence):
         :param pose: Desired Cartesian pose [x, y. z, a, b, c].
         :return:
         """
-        if not isinstance(pose, list) and len(pose) != 6:
-            raise ValueError("Pose must be a list with 6 entries!")
+        if not isinstance(pose, list) and not (len(pose) == 6 or
+                                               len(pose) == 7):
+            raise ValueError("Pose must be a list with 6 or 7 entries!")
         qp = self._list_to_pose_stamped(pose, "base")
 
         node = "ExternalTools/" + arm + "/PositionKinematicsNode/IKService"
