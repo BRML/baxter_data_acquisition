@@ -64,7 +64,8 @@ from recorder import (
 
 
 class JointPosition(object):
-    def __init__(self, limb, experiment, number, anomalies, images, threed):
+    def __init__(self, limb, experiment, number, anomalies, images, threed,
+                 sim):
         """ Joint position data acquisition with automatically induced
         anomalies.
         :param limb: The limb to record data from.
@@ -73,6 +74,7 @@ class JointPosition(object):
         :param anomalies: Whether there are anomalies in the data.
         :param images: Whether images are to be recorded.
         :param threed: Whether 3d point clouds are to be recorded.
+        :param sim: Whether in simulation or reality.
         :return: A baxter robot instance.
         """
         self._arm = limb
@@ -81,6 +83,7 @@ class JointPosition(object):
         self._anomalies = anomalies
         self._images = images
         self._threed = threed
+        self._sim = sim
 
         ns = rospkg.RosPack().get_path('baxter_data_acquisition')
         path = os.path.join(ns, 'data', 'setup', 'new')
@@ -109,7 +112,8 @@ class JointPosition(object):
         self._head = baxter_interface.Head()
 
         if self._images:
-            self._camera = baxter_interface.CameraController('head_camera')
+            cam = 'head_camera'
+            self._camera = baxter_interface.CameraController(cam, self._sim)
             self._rec_cam = CameraClient()
         if self._threed:
             self._rec_kinect = KinectClient()
@@ -143,7 +147,8 @@ class JointPosition(object):
         if self._images:
             # Camera handling is one fragile thing...
             try:
-                baxter_interface.CameraController('right_hand_camera').close()
+                baxter_interface.CameraController('right_hand_camera',
+                                                  self._sim).close()
             except AttributeError:
                 pass
             self._camera.resolution = (1280, 800)
