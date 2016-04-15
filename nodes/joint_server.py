@@ -63,7 +63,10 @@ class Handler(object):
                 rospy.logerr(msg)
                 return JointTriggerResponse(success=False, message=msg)
         else:  # Joint Recorder is set up, joint server can do its thing
-            if req.task == 'on':
+            if req.setup != '':
+                resp = True
+                msg = "Joint recorder already set up."
+            elif req.task == 'on':
                 if not self._running:
                     self._jr.start(outfile=req.outname)
                     self._running = True
