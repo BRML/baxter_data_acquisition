@@ -56,6 +56,7 @@ add_service_files(
   FILES
   Trigger.srv
   JointTrigger.srv
+  CameraTrigger.srv
 )
 
 ## Generate actions in the 'action' folder
