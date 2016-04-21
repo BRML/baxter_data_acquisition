@@ -206,6 +206,7 @@ class JointRecorder(object):
         cfg = list(data.command)
         self._data['configuration']['commanded'].append(
                 [rospy.get_time()] + cfg)
+        self._rate.sleep()
 
     def _cb_cfg_des(self, data):
         cfg = list(data.command)
@@ -240,10 +241,12 @@ class JointRecorder(object):
     def _cb_efft_gen(self, data):
         effort = list(data.command)
         self._data['effort']['generated'].append([rospy.get_time()] + effort)
+        self._rate.sleep()
 
     def _cb_efft_des(self, data):
         effort = list(data.command)
         self._data['effort']['desired'].append([rospy.get_time()] + effort)
+        self._rate.sleep()
 
     def _cb_pose(self, data):
         pose = [data.pose.position.x,
@@ -254,9 +257,11 @@ class JointRecorder(object):
                 data.pose.orientation.z,
                 data.pose.orientation.w]
         self._data['pose']['measured'].append([rospy.get_time()] + pose)
+        self._rate.sleep()
 
     def _cb_pose_label(self, data):
         self._data['pose']['label'].append([rospy.get_time(), data.data])
+        self._rate.sleep()
 
     def get_header_acc(self):
         """ Return acceleration data header.
