@@ -312,6 +312,7 @@ class JointClient(object):
         self._service_name = 'joint_service'
 
         # set up JointRecorder instance on server node
+        rospy.logwarn("Waiting for joint recorder server.")
         rospy.wait_for_service(self._service_name)
         try:
             trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
