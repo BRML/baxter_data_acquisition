@@ -233,9 +233,9 @@ class JointRecorder(object):
         effort = list(data.command)
         try:
             e = [effort[name.index(j)] for j in self._header['effort'][1:]]
+            self._data['effort']['commanded'].append([rospy.get_time()] + e)
         except ValueError:
             print "ERROR-cb_efft_comm %i-Key does not exist." % data.header.seq
-        self._data['effort']['commanded'].append([rospy.get_time()] + e)
         self._rate.sleep()
 
     def _cb_efft_gen(self, data):
