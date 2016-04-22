@@ -243,10 +243,20 @@ class JointPosition(object):
                     im = self._sampler.sample_i_multiplier()
                     dm = self._sampler.sample_d_multiplier()
                     add = 0.0
-                    joint_id = np.random.randint(0, 7)
                     a_mode = 1  # 1-'Control', 2-'Feedback'
                     a_type = 0  # 0-'Modified', 1-'Removed'
-                    anomaly_pars = [pm, im, dm, add, joint_id, a_mode, a_type]
+                    # random sample joint with motion > 10.0 deg, if none is
+                    # found, no anomaly will be induced!
+                    q_curr = self._limb.joint_angles()
+                    for i in range(len(jns)):
+                        if rospy.is_shutdown():
+                            break
+                        joint_id = np.random.randint(0, len(jns))
+                        jn = jns[joint_id]
+                        if abs(q_curr[jn] - q_des[jn]) > np.deg2rad(10.0):
+                            anomaly_pars = [pm, im, dm, add, joint_id,
+                                            a_mode, a_type]
+                            break
             self._move_to_joint_positions(des_idx=idx, dq_des=zeros,
                                           kpid=kpid, tau_lim=tau_lim,
                                           anomaly_pars=anomaly_pars,
