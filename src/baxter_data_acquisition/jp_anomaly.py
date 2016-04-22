@@ -353,9 +353,9 @@ class JointPosition(object):
 
                 self._limb.set_joint_torques(cmd)
 
-                count += 1
                 rate.sleep()
                 t_elapsed = rospy.get_time()-t_start
+                count = int(np.floor(t_elapsed*settings.interpolator_rate))
             if count >= steps.shape[0]:
                 print " Arrived at desired configuration."
             if t_elapsed >= timeout:
