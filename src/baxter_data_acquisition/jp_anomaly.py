@@ -319,6 +319,7 @@ class JointPosition(object):
             t_elapsed = 0.0
             t_start = rospy.get_time()
             cmd = dict()
+            started = False
             while (not rospy.is_shutdown() and
                    count < steps.shape[0] and
                    t_elapsed < timeout):
@@ -327,7 +328,9 @@ class JointPosition(object):
 
                 if anomaly_pars is not None:
                     """ Anomaly execution """
-                    if count == anomaly_start:
+                    if count >= anomaly_start and not started:
+                        started = True
+                        anomaly_start = count
                         print " Inducing anomaly on joint", joint
                         kp_mod = kpid[joint][0]*pm
                         ki_mod = kpid[joint][1]*im
