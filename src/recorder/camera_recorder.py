@@ -64,7 +64,7 @@ class CameraRecorder(object):
         self._fp.write('# timestamps [s]\n')
 
         self._clip = cv2.VideoWriter(outname + '.avi',
-                                     fourcc=cv2.cv.CV_FOURCC('m', 'p', '4', 'v'),
+                                     fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
                                      fps=fps,
                                      frameSize=imgsize,
                                      isColor=True)
