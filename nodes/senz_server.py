@@ -59,7 +59,7 @@ class Handler(object):
         else:
             resp = False
             msg = "Senz3d recorder already/not yet running."
-        rospy.loginfo(msg)
+        rospy.logdebug(msg)
         return TriggerResponse(success=resp, message=msg)
 
 
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     rospy.init_node(service_name)
     h = Handler()
     s = rospy.Service(service_name, Trigger, h.handle_trigger)
-    print 'Senz3d recorder ready to get triggered.'
+    rospy.loginfo('Senz3d recorder ready to get triggered.')
     rospy.spin()

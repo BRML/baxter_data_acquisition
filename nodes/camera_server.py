@@ -61,7 +61,7 @@ class Handler(object):
         else:
             resp = False
             msg = "Camera recorder already/not yet running."
-        rospy.loginfo(msg)
+        rospy.logdebug(msg)
         return CameraTriggerResponse(success=resp, message=msg)
 
 
@@ -74,5 +74,5 @@ if __name__ == "__main__":
     rospy.init_node(service_name)
     h = Handler()
     s = rospy.Service(service_name, CameraTrigger, h.handle_trigger)
-    print 'Camera recorder ready to get triggered.'
+    rospy.loginfo('Camera recorder ready to get triggered.')
     rospy.spin()

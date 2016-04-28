@@ -114,7 +114,7 @@ class Handler(object):
                     resp = False
                     msg = "No such joint recorder command."
         if msg != '':
-            rospy.loginfo(msg)
+            rospy.logdebug(msg)
         return JointTriggerResponse(success=resp, message=msg, header=header)
 
 
@@ -128,7 +128,7 @@ def main():
     rospy.init_node(service_name)
     h = Handler()
     s = rospy.Service(service_name, JointTrigger, h.handle_trigger)
-    print 'Joint recorder ready to get triggered.'
+    rospy.loginfo('Joint recorder ready to get triggered.')
     rospy.spin()
 
 

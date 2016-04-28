@@ -59,7 +59,7 @@ class Handler(object):
         else:
             resp = False
             msg = "Kinect recorder already/not yet running."
-        rospy.loginfo(msg)
+        rospy.logdebug(msg)
         return TriggerResponse(success=resp, message=msg)
 
 
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     rospy.init_node(service_name)
     h = Handler()
     s = rospy.Service(service_name, Trigger, h.handle_trigger)
-    print 'Kinect recorder ready to get triggered.'
+    rospy.loginfo('Kinect recorder ready to get triggered.')
     rospy.spin()
