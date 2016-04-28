@@ -53,9 +53,10 @@ from recorder import (
 )
 
 
-class JointPosition(object):
+class Experiment(object):
     def __init__(self, limb, experiment, number, threed):
-        """ Joint position data acquisition for handshake scenario.
+        """ Joint position or joint velocity data acquisition for handshake
+        scenario.
         :param limb: The 'robotic' limb to record data from. The other limb
         will be the 'human' limb.
         :param experiment: Two robotic arms (r-r) or one robotic and one

@@ -33,7 +33,7 @@ import rospkg
 import rospy
 
 from baxter_data_acquisition.simulation import sim_or_real
-from experiments.jp_anomaly import JointPosition
+from experiments.anomaly import Experiment
 
 
 def main():
@@ -102,11 +102,11 @@ def main():
     rospy.init_node('anomaly_data', anonymous=True)
 
     sim = sim_or_real()
-    jp = JointPosition(limb=args.limb, experiment=args.experiment,
-                       number=args.number, anomalies=args.anomalies,
-                       images=args.images, threed=args.threed, sim=sim)
-    rospy.on_shutdown(jp.clean_shutdown)
-    jp.execute(filename)
+    exp = Experiment(limb=args.limb, experiment=args.experiment,
+                     number=args.number, anomalies=args.anomalies,
+                     images=args.images, threed=args.threed, sim=sim)
+    rospy.on_shutdown(exp.clean_shutdown)
+    exp.execute(filename)
 
     print '\nDone.'
 

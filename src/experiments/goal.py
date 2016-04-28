@@ -46,9 +46,10 @@ from recorder import (
 )
 
 
-class JointPosition(object):
+class Experiment(object):
     def __init__(self, limb, number, images, threed, sim):
-        """ Joint position data acquisition with goal oriented movements.
+        """ Joint torque data acquisition with apparent goal oriented
+        movements.
         :param limb: The limb to record data from.
         :param number: The number of samples to record.
         :param images: Whether images are to be recorded.

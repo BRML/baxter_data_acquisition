@@ -32,7 +32,7 @@ import rospkg
 
 import rospy
 
-from experiments.jp_handshake import JointPosition
+from experiments.handshake import Experiment
 
 
 def main():
@@ -102,10 +102,10 @@ def main():
     print 'Initializing node ...'
     rospy.init_node('handshake_data', anonymous=True)
 
-    jp = JointPosition(limb=args.limb, experiment=args.experiment,
-                       number=args.number, threed=args.threed)
-    rospy.on_shutdown(jp.clean_shutdown)
-    jp.execute(outfile=filename, mode=args.mode)
+    exp = Experiment(limb=args.limb, experiment=args.experiment,
+                     number=args.number, threed=args.threed)
+    rospy.on_shutdown(exp.clean_shutdown)
+    exp.execute(outfile=filename, mode=args.mode)
 
     print '\nDone.'
 

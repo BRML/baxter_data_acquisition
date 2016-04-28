@@ -51,7 +51,7 @@ from recorder import (
 )
 
 
-class JointPosition(object):
+class Experiment(object):
     def __init__(self, limb, number, collisions, images, sim):
         """ Joint position data acquisition with manual induced collisions.
         :param limb: The limb to record data from.

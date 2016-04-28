@@ -62,7 +62,7 @@ from recorder import (
 )
 
 
-class JointPosition(object):
+class Experiment(object):
     def __init__(self, limb, experiment, number, anomalies, images, threed,
                  sim):
         """ Joint position data acquisition with automatically induced
