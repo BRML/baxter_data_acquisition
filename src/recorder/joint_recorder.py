@@ -312,16 +312,18 @@ class JointClient(object):
         self._service_name = 'joint_service'
 
         # set up JointRecorder instance on server node
-        rospy.logwarn("Waiting for joint recorder server.")
+        rospy.loginfo("Waiting for joint recorder server.")
         rospy.wait_for_service(self._service_name)
         try:
             trigger = rospy.ServiceProxy(self._service_name, JointTrigger)
             resp = trigger(setup='%s, %s, %s' % (limb, rate, anomaly_mode))
             if not resp.success:
-                raise ValueError("Unable to set up JointRecorder instance!")
+                s = "Unable to set up JointRecorder instance!"
+                rospy.logfatal(s)
+                raise ValueError(s)
             rospy.loginfo(resp.message)
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def start(self, outfile):
         """ Start joint recorder hosted on joint recorder server.
@@ -334,7 +336,7 @@ class JointClient(object):
             resp = trigger(task='on', outname=outfile)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def stop(self):
         """ Stop joint recorder hosted on joint recorder server.
@@ -346,7 +348,7 @@ class JointClient(object):
             resp = trigger(task='off')
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def write_sample(self):
         """ Append data of one sample to the .hdf5 joint data file. """
@@ -356,7 +358,7 @@ class JointClient(object):
             resp = trigger(task='write')
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def get_header_acc(self):
         """ Return acceleration data header.
@@ -368,7 +370,7 @@ class JointClient(object):
             resp = trigger(modality='acceleration')
             return resp.header
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def get_header_anom(self):
         """ Return anomaly data header.
@@ -380,7 +382,7 @@ class JointClient(object):
             resp = trigger(modality='anomaly')
             return resp.header
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def get_header_cfg(self):
         """ Return configuration data header.
@@ -392,7 +394,7 @@ class JointClient(object):
             resp = trigger(modality='configuration')
             return resp.header
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def get_header_efft(self):
         """ Return effort data header.
@@ -404,7 +406,7 @@ class JointClient(object):
             resp = trigger(modality='effort')
             return resp.header
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def get_header_pose(self):
         """ Return pose data header.
@@ -416,4 +418,4 @@ class JointClient(object):
             resp = trigger(modality='pose')
             return resp.header
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)

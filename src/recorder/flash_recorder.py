@@ -48,7 +48,7 @@ class FlashRecorder(object):
         try:
             self._fp = open(outname + '.txt', 'w')
         except IOError:
-            print "ERROR-start-Problem with opening text file."
+            rospy.logfatal("start - Problem with opening text file.")
             raise
         self._fp.write('# timestamps [s]\n')
 
@@ -85,7 +85,7 @@ class FlashClient(object):
             resp = trigger(on=True, outname=outname)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def stop(self):
         """ Stop screen flash recorder hosted on Flash recorder server.
@@ -97,4 +97,4 @@ class FlashClient(object):
             resp = trigger(on=False)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)

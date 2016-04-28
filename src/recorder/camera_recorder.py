@@ -59,7 +59,7 @@ class CameraRecorder(object):
         try:
             self._fp = open(outname + '.txt', 'w')
         except IOError:
-            print "ERROR-start-Problem with opening text file."
+            rospy.logfatal("start - Problem with opening text file.")
             raise
         self._fp.write('# timestamps [s]\n')
 
@@ -69,7 +69,7 @@ class CameraRecorder(object):
                                      frameSize=imgsize,
                                      isColor=True)
         if not self._clip.isOpened():
-            print "ERROR-start-Problem with opening VideoWriter."
+            rospy.logfatal("start - Problem with opening VideoWriter.")
             raise IOError('Problem with opening VideoWriter!')
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
@@ -83,12 +83,12 @@ class CameraRecorder(object):
         try:
             img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg, 'bgr8')
         except cv_bridge.CvBridgeError:
-            print 'ERROR-add_image-Problem with ROS image message conversion.'
+            rospy.logfatal('add_image - Problem with ROS image message conversion.')
             raise
         try:
             self._clip.write(img)
         except Exception:
-            print 'ERROR-add_image-Recording frame failed.'
+            rospy.logfatal('add_image - Recording frame failed.')
             raise
 
     def stop(self):
@@ -131,7 +131,7 @@ class CameraClient(object):
             resp = trigger(on=True, outname=outname, fps=fps, size=imgsize)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def stop(self):
         """ Stop camera recorder hosted on camera recorder server.
@@ -143,4 +143,4 @@ class CameraClient(object):
             resp = trigger(on=False)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)

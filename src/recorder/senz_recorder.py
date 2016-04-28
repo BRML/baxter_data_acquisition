@@ -77,7 +77,7 @@ class SenzClient(object):
             resp = trigger(on=True, outname=outname)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)
 
     def stop(self):
         """ Stop Senz3d recorder hosted on Senz3d recorder server.
@@ -89,4 +89,4 @@ class SenzClient(object):
             resp = trigger(on=False)
             return resp.success, resp.message
         except rospy.ServiceException as e:
-            print 'Service call failed: %s' % e
+            rospy.logerr('Service call failed: %s' % e)

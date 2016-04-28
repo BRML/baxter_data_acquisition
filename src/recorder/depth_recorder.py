@@ -57,14 +57,14 @@ class DepthRecorder(object):
         try:
             self._fp_ts = open(outname + '.txt', 'w')
         except IOError:
-            print "ERROR-start-Problem with opening text file."
+            rospy.logfatal("start - Problem with opening text file.")
             raise
         self._fp_ts.write('# timestamps [s]\n')
 
         try:
             self._fp_d = open(outname + '.bin', 'wb')
         except IOError:
-            print "ERROR-start-Problem with opening binary file."
+            rospy.logfatal("start - Problem with opening binary file.")
             raise
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
@@ -78,7 +78,7 @@ class DepthRecorder(object):
         try:
             img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
         except cv_bridge.CvBridgeError:
-            print 'ERROR-add_image-Problem with ROS image message conversion.'
+            rospy.logfatal('add_image - Problem with ROS image message conversion.')
             raise
 
         # Scale float32 image to uint16 image.
