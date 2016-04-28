@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+    <arg name="number" default="1"/>
+
+    <!-- Start simulation environment -->
+    <include file="$(find baxter_data_acquisition)/launch/simulation.launch">
+        <arg name="depth_internal" value="true"/>
+        <arg name="depth_external" value="true"/>
+    </include>
+
+    <!-- Start recorder servers -->
+    <include file="$(find baxter_data_acquisition)/launch/recorder.launch"/>
+
+    <!-- Run experiment -->
+    <node name="goal" pkg="baxter_data_acquisition" type="goal.py"
+          required="true" respawn="false" output="screen" cwd="node"
+          args="--limb left --threed true --image true --number $(arg number)"/>
+</launch>
