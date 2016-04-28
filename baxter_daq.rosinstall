@@ -1,0 +1,4 @@
+- git:
+    local-name: baxter_data_acquisition
+    uri: https://github.com/BRML/baxter_data_acquisition.git
+    version: master
