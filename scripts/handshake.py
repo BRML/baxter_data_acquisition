@@ -29,9 +29,10 @@ import argparse
 import datetime
 import os
 import rospkg
+
 import rospy
 
-from baxter_data_acquisition.jp_handshake import JointPosition
+from experiments.jp_handshake import JointPosition
 
 
 def main():

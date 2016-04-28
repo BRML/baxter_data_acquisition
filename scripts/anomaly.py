@@ -29,10 +29,11 @@ import argparse
 import datetime
 import os
 import rospkg
+
 import rospy
 
-from baxter_data_acquisition.jp_anomaly import JointPosition
 from baxter_data_acquisition.simulation import sim_or_real
+from experiments.jp_anomaly import JointPosition
 
 
 def main():
