@@ -1,57 +1,204 @@
 # baxter_data_acquisition
-Data acquisition with the baxter research robot for robot anomaly detection.
+Data acquisition with the Baxter research robot for robot anomaly detection 
+and movement prediction.
+
 
 ## Description of software
-tbd
+In this [ROS](http://www.ros.org/) package several experiments with the 
+[Baxter research robot](http://www.rethinkrobotics.com/research-education/) 
+are implemented.
+Those are intended for recording (internal) joint data (angles, torques,
+accelerations, poses, anomalies) as well as (external) visual data with RGB 
+and depth cameras.
+
+All experiments can be run both on the real robot as well as in the 
+[Gazebo](http://gazebosim.org/)-powered 
+[Baxter simulator](http://sdk.rethinkrobotics.com/wiki/Baxter_Simulator).
+
 
 ## How to install and use
-The baxter data acquisition software is implemented as a ROS package.
+The Baxter data acquisition software is implemented as a ROS package.
+It requires a development workstation with 
+[Ubuntu 14.04](http://releases.ubuntu.com/14.04/) and 
+[ROS Indigo](http://wiki.ros.org/indigo) installed.
 
-### Install the package
-The following steps are required to install the package:
+### Step 1: Install Ubuntu
+Follow the standard Ubuntu Installation Instructions for 14.04 (Desktop).
 
-1. If not already done, set up your baxter workstation as explained in the 
-[baxter SDK wiki](http://sdk.rethinkrobotics.com/wiki/Workstation_Setup).
-1. Install the fix for the baxter_interface repository. (tbd)
-1. Install the extension of the baxter_description repository. (tbd)
-1. Clone, build and install the ROS package:
+### Step 2: Install ROS Indigo
+Configure your Ubuntu repositories to allow "restricted," "universe," and 
+"multiverse."
+
+#### Setup your sources.list
 ```bash
-$ cd ~/ros_ws
-$ . baxter.sh
-$ cd ~/ros_ws/src
-$ git clone https://github.com/BRML/baxter_data_acquisition.git
-$ cd ~/ros_ws
+$ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+```
+
+#### Setup your keys
+```bash
+$ wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+```
+
+#### Verify latest debians, install ROS Indigo Desktop Full and rosinstall
+```bash
+$ sudo apt-get update
+$ sudo apt-get install ros-indigo-desktop-full
+$ sudo rosdep init
+$ rosdep update
+$ sudo apt-get install python-rosinstall
+```
+
+### Step 3: Create ROS workspace
+```bash
+$ mkdir -p ~/ros_baxter_daq_ws/src
+$ source /opt/ros/indigo/setup.bash
+$ cd ~/ros_baxter_daq_ws
 $ catkin_make
 $ catkin_make install
 ```
 
-### Run the data acquisition
-To run an experiment, do
+### Step 4: Install Baxter SDK dependencies
 ```bash
-$ cd ~/ros_ws
+$ sudo apt-get update
+$ sudo apt-get install git-core python-argparse python-wstool python-vcstools python-rosdep ros-indigo-control-msgs ros-indigo-joystick-drivers
+```
+
+### Step 5: Install this package and its dependencies
+Using the [wstool](http://wiki.ros.org/wstool) workspace tool, you will 
+checkout all required Github repositories into your ROS workspace source 
+directory.
+```bash
+$ cd ~/ros_baxter_daq_ws/src
+$ wstool init .
+$ wstool merge https://raw.githubusercontent.com/BRML/baxter_data_acquisition/master/baxter_daq.rosinstall
+$ wstool update
+$ source /opt/ros/indigo/setup.bash
+$ cd ~/ros_baxter_daq_ws
+$ catkin_make
+$ catkin_make install
+```
+
+### Step 6: Configure Baxter communication/ROS workspace
+The [baxter.sh](http://sdk.rethinkrobotics.com/wiki/Baxter.sh) script is a 
+convenient script which allows for intuitive modification of the core ROS 
+environment components. 
+This user edited script will allow for the quickest and easiest ROS setup.
+Further information and a detailed description is available on the 
+[baxter.sh](http://sdk.rethinkrobotics.com/wiki/Baxter.sh) page.
+
+#### Download the baxter.sh script
+```bash
+$ cd ~/ros_baxter_daq_ws
+$ wget https://github.com/RethinkRobotics/baxter/raw/master/baxter.sh
+$ chmod u+x baxter.sh
+```
+
+#### Customize the baxter.sh script
+Using your favorite editor, edit the baxter.sh shell script making the 
+necessary modifications to describe your development workstation.
+
+- Edit the `baxter_hostname` field to match the hostname of your Baxter 
+robot.
+- Edit **either** the `your_ip` **or** the `your_hostname` field to 
+match the IP or hostname of your development workstation.
+
+#### Initialize your SDK environment
+```bash
+$ cd ~/ros_baxter_daq_ws
+$ . baxter.sh
+```
+
+#### Verify environment
+To verify that all your changes are applied correctly, perform
+```bash
+$ env | grep ROS
+```
+The important fields at this point are
+
+- **ROS_MASTER_URI** (this should now contain your robot's hostname)
+- **ROS_IP** or **ROS_HOSTNAME** (this should now contain your development
+workstation's ip address or hostname. The unused field should **not** be 
+available!)
+
+
+## Run the data acquisition
+To run an experiment, initialize your SDK environment and `rosrun` the 
+experiment.
+That is, do
+```bash
+$ cd ~/ros_baxter_daq_ws
 $ . baxter.sh
 $ rosrun baxter_data_acquisition XXX
 ```
-where `XXX` describes the experiment. (tbd)
+where `XXX` describes the experiment. 
+Implemented experiments are:
 
-### Run the data acquisition in simulation mode
-To start up the simulation environment (Gazebo) and load the experiment, do
+- `collision.py`
+- `anomaly.py`
+- `handshake.py`
+- `goal.py`
+
+Use the `-h` command line option to learn more about the experiments and its
+required and optional parameters.
+
+Example:
 ```bash
-$ cd ~/ros_ws
-$ . baxter.sh sim
-$ roslaunch baxter_data_acquisition baxter.launch debug:=true
+$ cd ~/ros_baxter_daq_ws
+$ . baxter.sh
+$ rosrun baxter_data_acquisition anomaly.py -l left -a true -n 15
 ```
-It turns out that using the debug mode makes Gazebo more reliable, see 
-[link](http://answers.gazebosim.org/question/5115/on-startup-of-gazebo-i-get-intermittent-error/).
+This will run 15 samples of the joint position anomaly experiment on Baxter's 
+left arm with automatically induced anomalies.
 
-Note: If the Error `Exception [Master.cc:50] Unable to start server[Address already in use].` 
+
+## Run the data acquisition in simulation mode
+To start up the simulation environment (Gazebo) and run an experiment, 
+initialize your SDK environment in simulation mode, `roslaunch` the simulator
+and data recorder convenience scripts and `rosrun` the experiment.
+That is, in a terminal do
+```bash
+$ cd ~/ros_baxter_daq_ws
+$ . baxter.sh sim
+$ roslaunch baxter_data_acquisition simulation.launch
+```
+In another terminal do
+```bash
+$ cd ~/ros_baxter_daq_ws
+$ . baxter.sh sim
+$ roslaunch baxter_data_acquisition recorder.launch
+```
+And in a third terminal do
+```bash
+$ cd ~/ros_baxter_daq_ws
+$ . baxter.sh sim
+$ rosrun baxter_data_acquisition XXX
+```
+where `XXX` describes the experiment as it does for the experiments with the 
+real Baxter robot.
+
+Note: The `roslaunch` files have parameters to modify their behavior. Please
+have a look at the files for more information.
+
+
+### Experiment convenience launch file
+There also are launch files that collect the three seperate steps above into
+one file.
+This serves a two-fold purpose.
+First, it is more convenient to start the whole experiment from a single 
+terminal.
+Second, it allows for aborting the experiment if a single ROS node died, 
+increasing robustness of the data recording procedure.
+
+
+### Known bugs and annoying peculiarities of Gazebo
+
+- If the Error `Exception [Master.cc:50] Unable to start server[Address already in use].` 
 pops up, do
 ```bash
 $ killall gzserver
 ```
 before trying to start Gazebo again.
-
-Note: If the Error 
+- If the Error 
 ```
 Error [Param.cc:181] Unable to set value [1,0471975511965976] for key[horizontal_fov]
 Error [Param.cc:181] Unable to set value [0,100000001] for key[near]`
@@ -60,14 +207,8 @@ pops up, do (see [link](http://answers.ros.org/question/199401/problem-with-indi
 ```bash
 $ export LC_NUMERIC=C
 ```
-
-
-To run an experiment in simulation, in another terminal do
-```bash
-$ cd ~/ros_ws
-$ . baxter.sh sim
-$ rosrun baxter_data_acquisition XXX
-```
-where `XXX` describes the experiment as it does for the experiments in the 
-real world.
-
+- In some cases using the debug mode makes Gazebo more reliable, see 
+[link](http://answers.gazebosim.org/question/5115/on-startup-of-gazebo-i-get-intermittent-error/).
+To start Gazebo in debug mode, run 
+`roslaunch baxter_data_acquisition simulation.launch debug:=true` in a SDK 
+shell.
