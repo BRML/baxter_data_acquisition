@@ -6,6 +6,7 @@ d = generate_distutils_setup()
 d['packages'] = [
     'baxter_data_acquisition',
     'control',
+    'experiments',
     'recorder'
 ]
 d['package_dir'] = {'': 'src'}
