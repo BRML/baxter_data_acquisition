@@ -1,3 +1,3 @@
 # This folder contains
-Poses re-computed with the new baxter kinematics (firmware update 1.2.0) based 
-on the original (baxter_rpc) configurations.
+Poses re-computed with the new Baxter kinematics (firmware update 1.2.0) based 
+on the original (Baxter RPC) configurations.
