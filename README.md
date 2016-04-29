@@ -3,7 +3,11 @@ Data acquisition with the Baxter research robot for robot anomaly detection
 and movement prediction.
 The framework heavily builds upon the 
 [Baxter SDK](https://github.com/RethinkRobotics) and depends on the 
-[depth_sensors](https://github.com/BRML/depth_sensors.git) ROS package.
+[depth_sensors](https://github.com/BRML/depth_sensors.git) ROS package as 
+well as customized versions of 
+[baxter_interface](https://github.com/lude-ma/baxter_interface.git) and 
+[baxter_common](https://github.com/lude-ma/baxter_common.git) from Rethink 
+Robotics.
 
 
 ## Description of software
