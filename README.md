@@ -105,6 +105,8 @@ necessary modifications to describe your development workstation.
 robot.
 - Edit **either** the `your_ip` **or** the `your_hostname` field to 
 match the IP or hostname of your development workstation.
+Only one of those fields can be active at a time.
+The other variable should be commented out!
 
 #### Initialize your SDK environment
 ```bash
