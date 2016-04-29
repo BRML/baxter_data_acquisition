@@ -1,6 +1,9 @@
 # baxter_data_acquisition
 Data acquisition with the Baxter research robot for robot anomaly detection 
 and movement prediction.
+Heavily builds upon the [Baxter SDK](https://github.com/RethinkRobotics) and
+depends on the [depth_sensors](https://github.com/BRML/depth_sensors.git) ROS 
+package.
 
 
 ## Description of software
