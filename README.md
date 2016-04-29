@@ -22,6 +22,10 @@ It requires a development workstation with
 [Ubuntu 14.04](http://releases.ubuntu.com/14.04/) and 
 [ROS Indigo](http://wiki.ros.org/indigo) installed.
 
+> Note: If you have Ubuntu, ROS and and the Baxter SDK dependencies already 
+> installed, you only need to perform steps 3, 5 and 6 to clone, install and 
+> setup the Baxter data acquisition framework!
+
 ### Step 1: Install Ubuntu
 Follow the standard Ubuntu Installation Instructions for 14.04 (Desktop).
 
