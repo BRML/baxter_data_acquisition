@@ -23,21 +23,13 @@
     <arg name="baxter" default="true"/>
     <arg name="io_gui" default="false"/>
     <arg name="depth_internal" default="false"/>
+    <arg name="depth_external" default="false"/>
 
     <group if="$(arg baxter)">
         <include file="$(find baxter_data_acquisition)/launch/baxter.launch">
             <arg name="io_gui" value="$(arg io_gui)"/>
-            <arg name="depth" value="$(arg depth_internal)"/>
-        </include>
-    </group>
-
-
-    <!-- Load external Kinect sensor -->
-    <arg name="depth_external" default="false"/>
-
-    <group if="$(arg depth_external)" ns="kinect">
-        <include file="$(find baxter_data_acquisition)/launch/kinect.launch">
-            <arg name="x" value="2.5"/>
+            <arg name="depth_internal" value="$(arg depth_internal)"/>
+            <arg name="depth_external" value="$(arg depth_external)"/>
         </include>
     </group>
 </launch>
