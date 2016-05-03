@@ -40,3 +40,18 @@ def set_dict(limb, s0, s1, e0, e1, w0, w1, w2):
     """
     values = [s0, s1, e0, e1, w0, w1, w2]
     return {a: b for a, b in zip(joint_names(limb), values)}
+
+
+def as_boolean(s):
+    """ Convert a string '(T/t)rue' or '(F/f)alse' into a boolean 'True' or
+        'False' respectively.
+    :param s: The string to convert.
+    :return: The corresponding boolean.
+    :raise: ValueError if string is neither '(T/t)rue' nor '(F/f)alse'.
+    """
+    if s.lower() == 'true':
+        return True
+    elif s.lower() == 'false':
+        return False
+    else:
+        raise ValueError("Uhh, we might have a problem here!")

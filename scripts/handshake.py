@@ -32,6 +32,7 @@ import rospkg
 
 import rospy
 
+from baxter_data_acquisition.misc import as_boolean
 from experiments.handshake import Experiment
 
 
@@ -77,7 +78,7 @@ def main():
                         type=int, default=1,
                         help='The number of samples to record.')
     parser.add_argument('-t', '--threed', required=False,
-                        type=bool, default=False,
+                        type=str, default='false', choices=['true', 'false'],
                         help='Whether 3d point clouds are to be recorded.')
     parser.add_argument('-o', '--outfile', required=False,
                         type=str, default='',
@@ -103,7 +104,8 @@ def main():
     rospy.init_node('handshake_data', anonymous=True)
 
     exp = Experiment(limb=args.limb, experiment=args.experiment,
-                     number=args.number, threed=args.threed)
+                     number=args.number,
+                     threed=as_boolean(args.threed))
     rospy.on_shutdown(exp.clean_shutdown)
     exp.execute(outfile=filename, mode=args.mode)
 

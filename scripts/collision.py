@@ -32,6 +32,7 @@ import rospkg
 
 import rospy
 
+from baxter_data_acquisition.misc import as_boolean
 from baxter_data_acquisition.simulation import sim_or_real
 from experiments.collision import Experiment
 
@@ -58,10 +59,10 @@ def main():
                         type=int, default=1,
                         help='The number of samples to record.')
     parser.add_argument('-c', '--collisions', required=False,
-                        type=bool, default=False,
+                        type=str, default='false', choices=['true', 'false'],
                         help='Whether there are collisions in the data.')
     parser.add_argument('-i', '--images', required=False,
-                        type=bool, default=False,
+                        type=str, default='false', choices=['true', 'false'],
                         help='Whether images are to be recorded.')
     parser.add_argument('-o', '--outfile', required=False,
                         type=str, default='',
@@ -88,7 +89,8 @@ def main():
 
     sim = sim_or_real()
     exp = Experiment(limb=args.limb, number=args.number,
-                     collisions=args.collisions, images=args.images, sim=sim)
+                     collisions=as_boolean(args.collisions),
+                     images=as_boolean(args.images), sim=sim)
     rospy.on_shutdown(exp.clean_shutdown)
     exp.execute(filename)
 

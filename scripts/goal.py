@@ -32,6 +32,7 @@ import rospkg
 
 import rospy
 
+from baxter_data_acquisition.misc import as_boolean
 from baxter_data_acquisition.simulation import sim_or_real
 from experiments.goal import Experiment
 
@@ -58,10 +59,10 @@ def main():
                         type=int, default=1,
                         help='The number of samples to record.')
     parser.add_argument('-i', '--images', required=False,
-                        type=bool, default=False,
+                        type=str, default='false', choices=['true', 'false'],
                         help='Whether images are to be recorded.')
     parser.add_argument('-t', '--threed', required=False,
-                        type=bool, default=False,
+                        type=str, default='false', choices=['true', 'false'],
                         help='Whether 3d point clouds are to be recorded.')
     parser.add_argument('-o', '--outfile', required=False,
                         type=str, default='',
@@ -88,7 +89,8 @@ def main():
 
     sim = sim_or_real()
     exp = Experiment(limb=args.limb, number=args.number,
-                     images=args.images, threed=args.threed, sim=sim)
+                     images=as_boolean(args.images),
+                     threed=as_boolean(args.threed), sim=sim)
     rospy.on_shutdown(exp.clean_shutdown)
     exp.execute(filename)
 
