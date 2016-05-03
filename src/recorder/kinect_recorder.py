@@ -71,7 +71,7 @@ class KinectClient(object):
         the extension.
         :return: (bool success, string message)
         """
-        rospy.loginfo("Waiting for Kinect recorder server.")
+        rospy.logdebug("Waiting for Kinect recorder server.")
         rospy.wait_for_service(self._service_name)
         try:
             trigger = rospy.ServiceProxy(self._service_name, Trigger)
