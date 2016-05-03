@@ -125,6 +125,7 @@ class CameraClient(object):
         file.
         :return: (bool success, string message)
         """
+        rospy.loginfo("Waiting for camera recorder server.")
         rospy.wait_for_service(self._service_name)
         try:
             trigger = rospy.ServiceProxy(self._service_name, CameraTrigger)
