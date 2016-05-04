@@ -23,20 +23,34 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import numpy.random as rnd
+import numpy as np
+import os
+import rospkg
 import rospy
+from scipy.spatial import Delaunay
 
-from std_msgs.msg import UInt16
+from std_msgs.msg import (
+    Float64MultiArray,
+    UInt16
+)
 
 from baxter_core_msgs.msg import JointCommand
 
 import baxter_interface
 from baxter_interface import CHECK_VERSION
+from baxter_pykdl import baxter_kinematics
 
 from baxter_data_acquisition.face import flash_screen
+from baxter_data_acquisition.misc import set_dict
+from baxter_data_acquisition.sampler import AnomalySampler
 import baxter_data_acquisition.settings as settings
 from baxter_data_acquisition.workspace import Workspace
-
+from control import (
+    BangBangInterpolator,
+    PidController,
+    PID_DIRECT,
+    sample_from_workspace
+)
 from recorder import (
     CameraClient,
     FlashClient,
@@ -48,7 +62,7 @@ from recorder import (
 
 class Experiment(object):
     def __init__(self, limb, number, images, threed, sim):
-        """ Joint torque data acquisition with apparent goal oriented
+        """ Joint position data acquisition with apparent goal oriented
         movements.
         :param limb: The limb to record data from.
         :param number: The number of samples to record.
@@ -67,6 +81,16 @@ class Experiment(object):
         self._rec_joint = JointClient(limb=self._arm,
                                       rate=settings.recording_rate)
         self._head = baxter_interface.Head()
+        self._jns = settings.joint_names(self._arm)
+        self._ipl = BangBangInterpolator(limb=self._arm,
+                                         scale_dq=settings.dq_scale,
+                                         logfile=None,
+                                         debug=True)
+        ns = rospkg.RosPack().get_path('baxter_data_acquisition')
+        path = os.path.join(ns, 'data', 'setup', 'new', 'poses.txt')
+        self._hull = Delaunay(np.loadtxt(path))
+        self._kin = baxter_kinematics(self._arm)
+        self._lim = [settings.q_lim(self._arm)[jn] for jn in self._jns]
 
         if self._images:
             cam = 'head_camera'
@@ -80,14 +104,21 @@ class Experiment(object):
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
         ns = 'data/limb/' + self._arm + '/'
+        self._pub_cfg_des = rospy.Publisher(ns + 'cfg/des', JointCommand,
+                                            queue_size=10)
+
+        self._pub_cfg_comm = rospy.Publisher(ns + 'cfg/comm', JointCommand,
+                                             queue_size=10)
+        self._pub_efft_gen = rospy.Publisher(ns + 'efft/gen', JointCommand,
+                                             queue_size=10)
         self._pub_efft_des = rospy.Publisher(ns + 'efft/des', JointCommand,
                                              queue_size=10)
         self._pub_pose_label = rospy.Publisher(ns + 'pose/label', UInt16,
                                                queue_size=10)
-
-        # torque control parameters
-        self._rate = 1000.0  # Hz
-        self._missed_cmds = 20.0  # Missed cycles before triggering timeout
+        self._pub_anom = rospy.Publisher(ns + 'anomaly',
+                                         Float64MultiArray, queue_size=10)
+        self._sampler = AnomalySampler(settings.probability,
+                                       **settings.pid_mod)
 
         # robot workspace using default parameters
         self._ws = Workspace()
@@ -171,61 +202,164 @@ class Experiment(object):
         the reachable workspace.
         :return: True on completion.
         """
-        control_rate = rospy.Rate(self._rate)
-
-        # for safety purposes, set the control rate command timeout.
-        # if the specified number of command cycles are missed, the robot
-        # will timeout and disable
-        self._limb.set_command_timeout((1.0/self._rate)*self._missed_cmds)
-
-        tau_cmd = self._sample_torque()
-        duration = self._sample_duration()
-
-        elapsed = 0.0
-        start = rospy.get_time()
-        while not rospy.is_shutdown() and elapsed < duration:
-            if not self._rs.state().enabled:
-                rospy.logerr("Joint torque control failed to meet specified "
-                             "control rate timeout!")
-                break
-            self._pub_efft_des.publish(
-                command=[tau_cmd[jn]
-                         for jn in self._rec_joint.get_header_efft()[1:]]
-            )
-            self._limb.set_joint_torques(tau_cmd)
-            elapsed = rospy.get_time() - start
-            control_rate.sleep()
+        # Get current configuration q0
+        q0 = self._limb.joint_angles()
+        # Sample pose qT from workspace. Find corresponding configuration.
+        # Compute trajectory from q0 to qT.
+        qT = None
+        trajectory = None
+        failed = True
+        while failed:
+            qT = self._sample_config()
+            try:
+                trajectory = self._plan_trajectory(q0=q0, qT=qT)
+                failed = False
+            except ValueError as e:
+                print e
+        # Prepare anomaly parameters
+        anomaly_pars = None
+        if self._sampler.shall_anomaly():
+            pm = self._sampler.sample_p_multiplier()
+            im = self._sampler.sample_i_multiplier()
+            dm = self._sampler.sample_d_multiplier()
+            add = 0.0
+            a_mode = 1  # 1-'Control', 2-'Feedback'
+            a_type = 0  # 0-'Modified', 1-'Removed'
+            # random sample joint with motion > 10.0 deg, if none is
+            # found, no anomaly will be induced!
+            for i in range(len(self._jns)):
+                if rospy.is_shutdown():
+                    break
+                joint_id = np.random.randint(0, len(self._jns))
+                jn = self._jns[joint_id]
+                if abs(q0[jn] - qT[jn]) > np.deg2rad(10.0):
+                    anomaly_pars = [pm, im, dm, add, joint_id,
+                                    a_mode, a_type]
+                    break
+        # Report desired configuration and and execute trajectory
+        command = [qT[jn] for jn in self._rec_joint.get_header_cfg()[1:]]
+        self._pub_cfg_des.publish(command=command)
+        self._run_trajectory(trajectory, anomaly_pars)
         # final position of the end effector defines label of the trajectory
         pose = self._endpoint_pose()
         label = self._ws.cluster_position(pose[:3])
         self._pub_pose_label.publish(label)
         return True
 
-    def _sample_torque(self):
-        """ Sample a random torque vector from the scaled range of torque
-        limits for each joint. The torque value is sampled uniform from the
-        range of torques for each joint.
-        :return: A dictionary of joint name keys to joint torque values [Nm].
+    def _sample_config(self):
+        """ Sample a pose from the workspace and return the corresponding
+        configuration.
+        :return: Dictionary of joint name keys to joint angle values.
         """
-        tau_lim = settings.tau_lim(limb=self._arm, scale=settings.tau_scale)
-        tau = dict()
-        for jn in tau_lim:
-            a, b = tau_lim[jn]
-            tau[jn] = (b - a)*rnd.random_sample() + a
-        return tau
+        config = None
+        while config is None:
+            try:
+                pose, config = \
+                    sample_from_workspace(hull=self._hull, kin=self._kin,
+                                          lim=self._lim, arm=self._arm)
+            except ValueError as e:
+                print e
+        return {a: b for a, b in zip(self._jns, config)}
 
-    @staticmethod
-    def _sample_duration():
-        """ Sample duration for torque vector application uniform from a
-        reasonable range.
-        :return: The torque control duration [s].
+    def _plan_trajectory(self, q0, qT):
+        """ Plan a trajectory from configuration q0 to configuration qT
+        :param q0: Dictionary of joint name keys to current joint angle values.
+        :param qT: Dictionary of joint name keys to desired joint angle values.
+        :return: A trajectory (Nx7 numpy array).
+        :raise: ValueError if no valid trajectory is found.
         """
-        duration = (
-            (settings.tau_duration_max - settings.tau_duration_min) *
-            rnd.random_sample() +
-            settings.tau_duration_min
-        )
-        return duration
+        zeros = set_dict(self._arm, *(0.0,)*7)
+        for t in np.arange(start=0.5, stop=settings.run_time, step=0.15):
+            steps, _, err = self._ipl.interpolate(q_start=q0,
+                                                  q_end=qT,
+                                                  duration=t,
+                                                  dq_start=zeros,
+                                                  dq_end=zeros)
+            if err == 0:
+                return steps
+        raise ValueError("No valid trajectory found!")
+
+    def _run_trajectory(self, trajectory, anomaly_pars=None):
+        """ Execute trajectory, possibly with anomalies.
+        :param trajectory: A trajectory (Nx7 numpy array).
+        :param anomaly_pars: Anomaly parameters
+        [pm, im, dm, add, joint_id, a_mode, a_type] or None. If None, no
+        anomaly is generated, otherwise an anomaly is introduced according
+        to the passed parameters.
+        """
+        kpid = settings.kpid(self._arm)
+        tau_lim = settings.tau_lim(self._arm, scale=0.2)
+        count = 0
+        rate = rospy.Rate(settings.interpolator_rate)
+        print ("Planned trajectory is %i-dimensional and %i steps long." %
+               (trajectory.shape[1], trajectory.shape[0]))
+
+        if anomaly_pars is not None:
+            """ Set up anomalies """
+            pm, im, dm, _, joint_id, _, _ = anomaly_pars
+            joint = self._jns[joint_id]
+            margin = 10
+            if settings.anomal_iters + 2 * margin > trajectory.shape[0]:
+                anomaly_iters = trajectory.shape[0] - 2 * margin
+            else:
+                anomaly_iters = settings.anomal_iters
+            anomaly_start = np.random.randint(low=margin,
+                                              high=trajectory.shape[0] - anomaly_iters)
+
+        """ Set up PID controllers """
+        ctrl = dict()
+        for jn in self._jns:
+            ctrl[jn] = PidController(kpid=kpid[jn], direction=PID_DIRECT)
+            ctrl[jn].set_output_limits(minmax=tau_lim[jn])
+
+        """ Do PID control """
+        t_elapsed = 0.0
+        t_start = rospy.get_time()
+        cmd = dict()
+        started = False
+        while (not rospy.is_shutdown() and
+               count < trajectory.shape[0] and
+               t_elapsed < settings.run_time):
+            q0 = self._limb.joint_angles()
+            dq0 = self._limb.joint_velocities()
+
+            if anomaly_pars is not None:
+                """ Anomaly execution """
+                if count >= anomaly_start and not started:
+                    started = True
+                    anomaly_start = count
+                    print " Inducing anomaly on joint", joint
+                    kp_mod = kpid[joint][0] * pm
+                    ki_mod = kpid[joint][1] * im
+                    kd_mod = kpid[joint][2] * dm
+                    ctrl[joint].set_parameters(kp=kp_mod, ki=ki_mod,
+                                               kd=kd_mod)
+                elif anomaly_start < count < anomaly_start + anomaly_iters:
+                    self._pub_anom.publish(data=anomaly_pars)
+                elif count == anomaly_start + anomaly_iters:
+                    ctrl[joint].set_parameters(kpid=kpid[joint])
+
+            for jn in q0.keys():
+                idx = self._jns.index(jn)
+                cmd[jn] = ctrl[jn].compute(q0[jn], trajectory[count][idx],
+                                           dq0[jn])
+
+            command = [trajectory[count][self._jns.index(jn)]
+                       for jn in self._rec_joint.get_header_cfg()[1:]]
+            self._pub_cfg_comm.publish(command=command)
+            command = [ctrl[jn].generated
+                       for jn in self._rec_joint.get_header_efft()[1:]]
+            self._pub_efft_gen.publish(command=command)
+
+            self._limb.set_joint_torques(cmd)
+
+            rate.sleep()
+            t_elapsed = rospy.get_time() - t_start
+            count = int(np.floor(t_elapsed * settings.interpolator_rate))
+        if count >= trajectory.shape[0]:
+            print " Arrived at desired configuration."
+        if t_elapsed >= settings.run_time:
+            print " Motion timed out."
 
     def _endpoint_pose(self):
         """ Current pose of the wrist of one arm of the baxter robot.

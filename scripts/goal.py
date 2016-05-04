@@ -41,9 +41,11 @@ def main():
     """ Apparent goal oriented motion data acquisition with the baxter robot.
 
     A robotic arm is moved between (pseudo-)random poses in Cartesian space in
-    a torque-controlled manner. To this end, a random seven-dimensional torque
-    vector is sampled together with a random duration for which the torque
-    vector is applied to the joints of one arm or the robot.
+    a position-controlled manner. To this end, a random pose is sampled from
+    the feasible workspace and its corresponding configuration computed. A
+    trajectory is computed from the current configuration to the desired
+    configuration and executed with randomly introduced anomalies along the
+    way.
 
     Afterward the resulting trajectory is labeled according to the portion of
     the workspace the end-effector ends up in.
