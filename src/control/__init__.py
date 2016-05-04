@@ -18,6 +18,9 @@ from pid import (
 
 from ipl_bb import BangBangInterpolator
 
-from hdl_pose import PoseHandler
+from hdl_pose import (
+    PoseHandler,
+    sample_from_workspace
+)
 from hdl_config import ConfigurationHandler
 from hdl_duration import DurationHandler

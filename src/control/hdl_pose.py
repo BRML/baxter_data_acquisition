@@ -148,19 +148,12 @@ class PoseHandler(PoseConfigDuration):
         idx = 0
         lim = [q_lim(arm)[jn] for jn in joint_names(arm)]
         while idx < n_configs:
-            # sample seven uniform random values
-            config = np.random.random_sample((7,))
-            # transform to joint range
-            config = [config[i]*(lim[i][1] - lim[i][0]) + lim[i][0]
-                      for i in range(len(config))]
-            cfg = {a: b for a, b in zip(joint_names(arm), config)}
-            # transform to Cartesian space using forward kinematics
-            pose = kin.forward_position_kinematics(joint_values=cfg)
-            # check if pose is in convex hull of workspace corners
-            if hull.find_simplex(pose[:3]) >= 0:
-                configs[idx, :] = config
-                poses[idx, :] = pose
+            try:
+                poses[idx, :], configs[idx, :] = \
+                    sample_from_workspace(hull, kin, lim, arm)
                 idx += 1
+            except ValueError:
+                pass
         print "\n"
         path = raw_input(" Where to save poses2.txt and configurations2.txt: ")
         if not os.path.exists(path):
@@ -169,3 +162,28 @@ class PoseHandler(PoseConfigDuration):
                    delimiter=',', header='s0, s1, e0, e1, w0, w1, w2')
         np.savetxt(os.path.join(path, 'poses2.txt'), poses,
                    delimiter=',', header='px, py, pz, ox, oy, oz, ow')
+
+
+def sample_from_workspace(hull, kin, lim, arm):
+    """ Sample Cartesian pose and corresponding seven-dimensional
+    configuration within the workspace.
+    :param hull: Delauny composition of the workspace.
+    :param kin: A pykdl kinematic instance.
+    :param lim: Dictionary of joint name keys to joint angle limit tuples.
+    :param arm: <left/right> arm.
+    :return: A tuple (pose, config).
+    :raise: ValueError if pose does not lie within workspace.
+    """
+    # sample seven uniform random values
+    config = np.random.random_sample((7,))
+    # transform to joint range
+    config = [config[i]*(lim[i][1] - lim[i][0]) + lim[i][0]
+              for i in range(len(config))]
+    cfg = {a: b for a, b in zip(joint_names(arm), config)}
+    # transform to Cartesian space using forward kinematics
+    pose = kin.forward_position_kinematics(joint_values=cfg)
+    # check if pose is in convex hull of workspace corners
+    if hull.find_simplex(pose[:3]) >= 0:
+        return pose, config
+    else:
+        raise ValueError("Sampled pose does not lie in workspace!")
