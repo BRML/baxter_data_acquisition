@@ -15,6 +15,7 @@
     <include file="$(find baxter_data_acquisition)/launch/recorder.launch">
         <arg name="kinect" value="$(arg depth)"/>
         <arg name="senz3d" value="$(arg depth)"/>
+        <arg name="flash" value="$(arg depth)"/>
     </include>
 
     <!-- Run experiment -->
