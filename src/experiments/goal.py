@@ -243,6 +243,9 @@ class Experiment(object):
         command = [qT[jn] for jn in self._rec_joint.get_header_cfg()[1:]]
         self._pub_cfg_des.publish(command=command)
         self._run_trajectory(trajectory, anomaly_pars)
+        # stay at current configuration (drift in simulation only)
+        if self._sim:
+            self._limb.move_to_joint_positions(self._limb.joint_angles())
         # final position of the end effector defines label of the trajectory
         pose = self._endpoint_pose()
         label = self._ws.cluster_position(pose[:3])
