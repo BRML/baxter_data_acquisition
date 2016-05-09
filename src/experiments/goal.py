@@ -86,7 +86,7 @@ class Experiment(object):
         self._ipl = BangBangInterpolator(limb=self._arm,
                                          scale_dq=settings.dq_scale,
                                          logfile=None,
-                                         debug=True)
+                                         debug=False)
         ns = rospkg.RosPack().get_path('baxter_data_acquisition')
         path = os.path.join(ns, 'data', 'setup', 'new', 'poses.txt')
         self._hull = Delaunay(np.loadtxt(path, delimiter=',')[:, :3])
@@ -195,12 +195,13 @@ class Experiment(object):
             self._limb.move_to_neutral()
         rospy.signal_shutdown('Done with experiment.')
 
-    def _one_sample(self):
+    def _one_sample(self, verbose=False):
         """ One sample of goal oriented movement.
 
         Baxter moves one limb from the current configuration to a
         configuration corresponding to a (pseudo)randomly sampled pose from
         the reachable workspace.
+        :param verbose: Whether to print debug messages.
         :return: True on completion.
         """
         # Get current configuration q0
@@ -216,7 +217,8 @@ class Experiment(object):
                 trajectory = self._plan_trajectory(q0=q0, qT=qT)
                 failed = False
             except ValueError as e:
-                print e
+                if verbose:
+                    print e
         # Prepare anomaly parameters
         anomaly_pars = None
         if self._sampler.shall_anomaly():
@@ -247,9 +249,10 @@ class Experiment(object):
         self._pub_pose_label.publish(label)
         return True
 
-    def _sample_config(self):
+    def _sample_config(self, verbose=False):
         """ Sample a pose from the workspace and return the corresponding
         configuration.
+        :param verbose: Whether to print debug messages.
         :return: Dictionary of joint name keys to joint angle values.
         """
         config = None
@@ -259,7 +262,8 @@ class Experiment(object):
                     sample_from_workspace(hull=self._hull, kin=self._kin,
                                           lim=self._lim, arm=self._arm)
             except ValueError as e:
-                print e
+                if verbose:
+                    print e
         return {a: b for a, b in zip(self._jns, config)}
 
     def _plan_trajectory(self, q0, qT):
