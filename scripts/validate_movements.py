@@ -27,6 +27,8 @@
 
 import argparse
 import datetime
+import numpy as np
+import numpy.random as rnd
 import os
 import rospkg
 import rospy
@@ -165,6 +167,57 @@ class Robot(object):
                     self._arm + '_s1': -0.04256796681518555}]
         return configs[configuration]
 
+    def velocity(self, outfile):
+        print '\nRecord joint velocity motion data into %s.' % outfile
+        neutral = {a: b
+                   for a, b in zip(self._jns,
+                                   [0.02, 0.05, -1.16, 1.82, -0.09, 0.41, -0.69])}
+        self._limb.move_to_joint_positions(neutral)
+
+        rate = rospy.Rate(settings.recording_rate)
+
+        def make_v_func():
+            """ Create a randomly parametrized cosine function.
+            :return: A randomly parametrized cosine function to control a
+            specific joint.
+            """
+            period_factor = rnd.uniform(0.3, 0.5)
+            amplitude_factor = rnd.uniform(0.1, 0.3)
+
+            def v_func(elapsed):
+                w = period_factor * elapsed
+                return amplitude_factor * np.cos(w * 2 * np.pi)
+
+            return v_func
+
+        v_funcs = [make_v_func() for _ in self._jns]
+
+        def make_cmd(joint_names, elapsed):
+            """ Create joint velocity command.
+            :param joint_names: list of joint names.
+            :param elapsed: elapsed time in [s].
+            :return: Dictionary of joint name keys to joint velocity commands
+            """
+            return {jn: v_funcs[i](elapsed)
+                    for i, jn in enumerate(joint_names)}
+
+        for nr in range(10):
+            if rospy.is_shutdown():
+                break
+            print 'Recording sample %i of 10.' % (nr + 1)
+
+            self._rec_joint.start(outfile=outfile)
+            elapsed = 0.0
+            start = rospy.get_time()
+            while not rospy.is_shutdown() and elapsed < settings.run_time:
+                elapsed = rospy.get_time() - start
+                cmd = make_cmd(self._jns, elapsed)
+                self._limb.set_joint_velocities(cmd)
+                rate.sleep()
+            self._rec_joint.stop()
+            self._rec_joint.write_sample()
+            self._limb.move_to_joint_positions(neutral)
+
 
 def main():
     """ Record limb motion of the Baxter research robot.
@@ -203,7 +256,7 @@ def main():
     if args.mode == 'position':
         rob.position(outfile=filename)
     elif args.mode == 'velocity':
-        pass
+        rob.velocity(outfile=filename)
     elif args.mode == 'torque':
         pass
     else:
