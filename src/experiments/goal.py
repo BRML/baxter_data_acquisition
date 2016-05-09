@@ -79,7 +79,8 @@ class Experiment(object):
 
         self._limb = baxter_interface.Limb(self._arm)
         self._rec_joint = JointClient(limb=self._arm,
-                                      rate=settings.recording_rate)
+                                      rate=settings.recording_rate,
+                                      anomaly_mode='automatic')
         self._head = baxter_interface.Head()
         self._jns = settings.joint_names(self._arm)
         self._ipl = BangBangInterpolator(limb=self._arm,
@@ -88,7 +89,7 @@ class Experiment(object):
                                          debug=True)
         ns = rospkg.RosPack().get_path('baxter_data_acquisition')
         path = os.path.join(ns, 'data', 'setup', 'new', 'poses.txt')
-        self._hull = Delaunay(np.loadtxt(path))
+        self._hull = Delaunay(np.loadtxt(path, delimiter=',')[:, :3])
         self._kin = baxter_kinematics(self._arm)
         self._lim = [settings.q_lim(self._arm)[jn] for jn in self._jns]
 
