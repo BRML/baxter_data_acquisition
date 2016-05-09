@@ -52,7 +52,7 @@ class Handler(object):
         header = ''
         if not self._setup:
             if req.setup != '':
-                limb, rate, mode = req.setup.split(',')
+                limb, rate, mode = [x.strip() for x in req.setup.split(',')]
                 self._jr = JointRecorder(limb=limb, rate=float(rate),
                                          anomaly_mode=mode)
                 self._setup = True
