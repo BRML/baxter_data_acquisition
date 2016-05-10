@@ -61,6 +61,9 @@ def main():
     parser.add_argument('-c', '--collisions', required=False,
                         type=str, default='false', choices=['true', 'false'],
                         help='Whether there are collisions in the data.')
+    parser.add_argument('-j', '--joints', required=False,
+                        type=str, default='true', choices=['true', 'false'],
+                        help='Whether joint data are to be recorded.')
     parser.add_argument('-i', '--images', required=False,
                         type=str, default='false', choices=['true', 'false'],
                         help='Whether images are to be recorded.')
@@ -90,6 +93,7 @@ def main():
     sim = sim_or_real()
     exp = Experiment(limb=args.limb, number=args.number,
                      collisions=as_boolean(args.collisions),
+                     joints=as_boolean(args.joints),
                      images=as_boolean(args.images), sim=sim)
     rospy.on_shutdown(exp.clean_shutdown)
     exp.execute(filename)

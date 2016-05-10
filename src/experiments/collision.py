@@ -52,12 +52,13 @@ from recorder import (
 
 
 class Experiment(object):
-    def __init__(self, limb, number, collisions, images, sim):
+    def __init__(self, limb, number, collisions, images, joints, sim):
         """ Joint position data acquisition with manual induced collisions.
         :param limb: The limb to record data from.
         :param number: The number of samples to record.
         :param collisions: Whether there are collisions in the data.
         :param images: Whether images are to be recorded.
+        :param joints: Whether joint data are to be recorded.
         :param sim: Whether in simulation or reality.
         :return: A baxter robot instance.
         """
@@ -65,12 +66,17 @@ class Experiment(object):
         self._number = number
         self._collisions = collisions
         self._images = images
+        self._joints = joints
         self._sim = sim
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointClient(limb=self._arm,
-                                      rate=settings.recording_rate,
-                                      anomaly_mode='manual')
+        ns = 'data/limb/' + self._arm + '/'
+        if self._joints:
+            self._rec_joint = JointClient(limb=self._arm,
+                                          rate=settings.recording_rate,
+                                          anomaly_mode='manual')
+            self._pub_cfg_des = rospy.Publisher(ns + 'cfg/des', JointCommand,
+                                                queue_size=10)
         self._head = baxter_interface.Head()
 
         if self._images:
@@ -80,14 +86,11 @@ class Experiment(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
-        ns = 'data/limb/' + self._arm
-        self._pub_cfg_des = rospy.Publisher(ns + '/cfg/des', JointCommand,
-                                            queue_size=10)
 
         self._previous_config = None
         if self._collisions:
             self._sampler = CollisionSampler(settings.probability)
-            self._pub_anom = rospy.Publisher(ns + '/anomaly',
+            self._pub_anom = rospy.Publisher(ns + 'anomaly',
                                              Float64MultiArray, queue_size=10)
         self._imgpath = os.path.join(rospkg.RosPack().
                                      get_path('baxter_data_acquisition'),
@@ -148,7 +151,8 @@ class Experiment(object):
                     break
                 print 'Recording sample %i of %d.' % (nr + 1, self._number)
 
-                self._rec_joint.start(outfile)
+                if self._joints:
+                    self._rec_joint.start(outfile)
                 if self._images:
                     self._rec_cam.start(outfile + '-%i' % nr,
                                         self._camera.fps,
@@ -156,8 +160,9 @@ class Experiment(object):
                 self._one_sample()
                 if self._images:
                     self._rec_cam.stop()
-                self._rec_joint.stop()
-                self._rec_joint.write_sample()
+                if self._joints:
+                    self._rec_joint.stop()
+                    self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
             pass
         for thread in threads:
@@ -191,8 +196,10 @@ class Experiment(object):
                                                  ])
                 else:
                     send_image(os.path.join(self._imgpath, 'clear.png'))
-            self._pub_cfg_des.publish(
-                command=[cmd[j] for j in self._rec_joint.get_header_cfg()[1:]])
+            if self._joints:
+                self._pub_cfg_des.publish(
+                    command=[cmd[j]
+                             for j in self._rec_joint.get_header_cfg()[1:]])
             self._limb.move_to_joint_positions(cmd)
             elapsed = rospy.get_time() - start
 
