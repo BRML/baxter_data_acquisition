@@ -60,6 +60,9 @@ def main():
     parser.add_argument('-n', '--number', required=False,
                         type=int, default=1,
                         help='The number of samples to record.')
+    parser.add_argument('-j', '--joints', required=False,
+                        type=str, default='true', choices=['true', 'false'],
+                        help='Whether joint data are to be recorded.')
     parser.add_argument('-i', '--images', required=False,
                         type=str, default='false', choices=['true', 'false'],
                         help='Whether images are to be recorded.')
@@ -91,6 +94,7 @@ def main():
 
     sim = sim_or_real()
     exp = Experiment(limb=args.limb, number=args.number,
+                     joints=as_boolean(args.joints),
                      images=as_boolean(args.images),
                      threed=as_boolean(args.threed), sim=sim)
     rospy.on_shutdown(exp.clean_shutdown)

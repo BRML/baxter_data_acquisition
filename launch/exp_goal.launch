@@ -1,25 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <launch>
+    <arg name="gazebo" default="false"/>
+
+    <arg name="rec_joint" default="false"/>
+    <arg name="rec_camera" default="false"/>
+    <arg name="rec_depth" default="false"/>
     <arg name="number" default="1"/>
 
-    <arg name="depth" value="true"/>
 
     <!-- Start simulation environment -->
-    <include file="$(find baxter_data_acquisition)/launch/simulation.launch">
-        <arg name="depth_internal" value="$(arg depth)"/>
-        <arg name="depth_external" value="$(arg depth)"/>
+    <include if="$(arg gazebo)"
+             file="$(find baxter_data_acquisition)/launch/simulation.launch">
+        <arg name="depth_internal" value="$(arg rec_depth)"/>
+        <arg name="depth_external" value="$(arg rec_depth)"/>
     </include>
 
     <!-- Start recorder servers -->
     <include file="$(find baxter_data_acquisition)/launch/recorder.launch">
-        <arg name="kinect" value="$(arg depth)"/>
-        <arg name="senz3d" value="$(arg depth)"/>
-        <arg name="flash" value="$(arg depth)"/>
+        <arg name="joint" value="$(arg rec_joint)"/>
+        <arg name="camera" value="$(arg rec_camera)"/>
+        <arg name="kinect" value="$(arg rec_depth)"/>
+        <arg name="senz3d" value="$(arg rec_depth)"/>
+        <arg name="flash" value="$(arg rec_depth)"/>
     </include>
 
     <!-- Run experiment -->
     <node name="goal" pkg="baxter_data_acquisition" type="goal.py"
           required="true" respawn="false" output="screen" cwd="node"
-          args="--limb left --threed $(arg depth) --image true --number $(arg number)"/>
+          args="--limb left --number $(arg number) --joints $(arg rec_joint)
+                 --images $(arg rec_camera) --threed $(arg rec_depth)"/>
 </launch>

@@ -61,11 +61,12 @@ from recorder import (
 
 
 class Experiment(object):
-    def __init__(self, limb, number, images, threed, sim):
+    def __init__(self, limb, number, joints, images, threed, sim):
         """ Joint position data acquisition with apparent goal oriented
         movements.
         :param limb: The limb to record data from.
         :param number: The number of samples to record.
+        :param joints: Whether joint data are to be recorded.
         :param images: Whether images are to be recorded.
         :param threed: Whether 3d point clouds are to be recorded.
         :param sim: Whether in simulation or reality.
@@ -73,14 +74,16 @@ class Experiment(object):
         """
         self._arm = limb
         self._number = number
+        self._joints = joints
         self._images = images
         self._threed = threed
         self._sim = sim
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointClient(limb=self._arm,
-                                      rate=settings.recording_rate,
-                                      anomaly_mode='automatic')
+        if self._joints:
+            self._rec_joint = JointClient(limb=self._arm,
+                                          rate=settings.recording_rate,
+                                          anomaly_mode='automatic')
         self._head = baxter_interface.Head()
         self._jns = settings.joint_names(self._arm)
         self._ipl = BangBangInterpolator(limb=self._arm,
@@ -105,19 +108,19 @@ class Experiment(object):
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
         ns = 'data/limb/' + self._arm + '/'
-        self._pub_cfg_des = rospy.Publisher(ns + 'cfg/des', JointCommand,
-                                            queue_size=10)
-
-        self._pub_cfg_comm = rospy.Publisher(ns + 'cfg/comm', JointCommand,
-                                             queue_size=10)
-        self._pub_efft_gen = rospy.Publisher(ns + 'efft/gen', JointCommand,
-                                             queue_size=10)
-        self._pub_efft_des = rospy.Publisher(ns + 'efft/des', JointCommand,
-                                             queue_size=10)
-        self._pub_pose_label = rospy.Publisher(ns + 'pose/label', UInt16,
-                                               queue_size=10)
-        self._pub_anom = rospy.Publisher(ns + 'anomaly',
-                                         Float64MultiArray, queue_size=10)
+        if self._joints:
+            self._pub_cfg_des = rospy.Publisher(ns + 'cfg/des', JointCommand,
+                                                queue_size=10)
+            self._pub_cfg_comm = rospy.Publisher(ns + 'cfg/comm',
+                                                 JointCommand, queue_size=10)
+            self._pub_efft_gen = rospy.Publisher(ns + 'efft/gen',
+                                                 JointCommand, queue_size=10)
+            self._pub_efft_des = rospy.Publisher(ns + 'efft/des',
+                                                 JointCommand, queue_size=10)
+            self._pub_pose_label = rospy.Publisher(ns + 'pose/label', UInt16,
+                                                   queue_size=10)
+            self._pub_anom = rospy.Publisher(ns + 'anomaly',
+                                             Float64MultiArray, queue_size=10)
         self._sampler = AnomalySampler(settings.probability,
                                        **settings.pid_mod)
 
@@ -170,7 +173,8 @@ class Experiment(object):
                     break
                 print 'Recording sample %i of %d.' % (nr + 1, self._number)
 
-                self._rec_joint.start(outfile)
+                if self._joints:
+                    self._rec_joint.start(outfile)
                 if self._images:
                     self._rec_cam.start(outfile + '-%i' % nr,
                                         self._camera.fps,
@@ -187,8 +191,9 @@ class Experiment(object):
                     self._rec_kinect.stop()
                     self._rec_senz3d.stop()
                     self._rec_flash.stop()
-                self._rec_joint.stop()
-                self._rec_joint.write_sample()
+                if self._joints:
+                    self._rec_joint.stop()
+                    self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
             pass
         finally:
@@ -240,16 +245,18 @@ class Experiment(object):
                                     a_mode, a_type]
                     break
         # Report desired configuration and and execute trajectory
-        command = [qT[jn] for jn in self._rec_joint.get_header_cfg()[1:]]
-        self._pub_cfg_des.publish(command=command)
+        if self._joints:
+            command = [qT[jn] for jn in self._rec_joint.get_header_cfg()[1:]]
+            self._pub_cfg_des.publish(command=command)
         self._run_trajectory(trajectory, anomaly_pars)
         # stay at current configuration (drift in simulation only)
         if self._sim:
             self._limb.move_to_joint_positions(self._limb.joint_angles())
         # final position of the end effector defines label of the trajectory
-        pose = self._endpoint_pose()
-        label = self._ws.cluster_position(pose[:3])
-        self._pub_pose_label.publish(label)
+        if self._joints:
+            pose = self._endpoint_pose()
+            label = self._ws.cluster_position(pose[:3])
+            self._pub_pose_label.publish(label)
         return True
 
     def _sample_config(self, verbose=False):
@@ -343,7 +350,8 @@ class Experiment(object):
                     ctrl[joint].set_parameters(kp=kp_mod, ki=ki_mod,
                                                kd=kd_mod)
                 elif anomaly_start < count < anomaly_start + anomaly_iters:
-                    self._pub_anom.publish(data=anomaly_pars)
+                    if self._joints:
+                        self._pub_anom.publish(data=anomaly_pars)
                 elif count == anomaly_start + anomaly_iters:
                     ctrl[joint].set_parameters(kpid=kpid[joint])
 
@@ -352,12 +360,13 @@ class Experiment(object):
                 cmd[jn] = ctrl[jn].compute(q0[jn], trajectory[count][idx],
                                            dq0[jn])
 
-            command = [trajectory[count][self._jns.index(jn)]
-                       for jn in self._rec_joint.get_header_cfg()[1:]]
-            self._pub_cfg_comm.publish(command=command)
-            command = [ctrl[jn].generated
-                       for jn in self._rec_joint.get_header_efft()[1:]]
-            self._pub_efft_gen.publish(command=command)
+            if self._joints:
+                command = [trajectory[count][self._jns.index(jn)]
+                           for jn in self._rec_joint.get_header_cfg()[1:]]
+                self._pub_cfg_comm.publish(command=command)
+                command = [ctrl[jn].generated
+                           for jn in self._rec_joint.get_header_efft()[1:]]
+                self._pub_efft_gen.publish(command=command)
 
             self._limb.set_joint_torques(cmd)
 
