@@ -49,17 +49,19 @@ class Handler(object):
         :returns: A TriggerResponse(bool success, string message).
         """
         if req.on and not self._running:
+            rospy.loginfo("Starting flash recorder ...")
             self._running = True
             resp = self._fr.start(outname=req.outname)
             msg = "Started flash recorder."
         elif not req.on and self._running:
+            rospy.loginfo("Stopping flash recorder ...")
             self._running = False
             resp = self._fr.stop()
             msg = "Stopped flash recorder."
         else:
             resp = False
             msg = "Flash recorder already/not yet running."
-        rospy.logdebug(msg)
+        rospy.loginfo(msg)
         return TriggerResponse(success=resp, message=msg)
 
 
@@ -69,7 +71,7 @@ if __name__ == "__main__":
     """
     service_name = 'flash_service'
 
-    rospy.init_node(service_name)
+    rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()
     s = rospy.Service(service_name, Trigger, h.handle_trigger)
     rospy.loginfo('Flash recorder ready to get triggered.')

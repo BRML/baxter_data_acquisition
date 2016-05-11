@@ -68,6 +68,7 @@ class Handler(object):
                 msg = "Joint recorder already set up."
             elif req.task == 'on':
                 if not self._running:
+                    rospy.loginfo("Starting joint recorder ...")
                     self._jr.start(outfile=req.outname)
                     self._running = True
                     resp = True
@@ -77,6 +78,7 @@ class Handler(object):
                     msg = "Joint recorder already running."
             elif req.task == 'off':
                 if self._running:
+                    rospy.loginfo("Stopping joint recorder ...")
                     self._jr.stop()
                     self._running = False
                     resp = True
@@ -86,6 +88,7 @@ class Handler(object):
                     msg = "Joint recorder not yet running."
             elif req.task == 'write':
                 if not self._running:
+                    rospy.loginfo("Writing joint data ...")
                     self._jr.write_sample()
                     resp = True
                     msg = "Done writing joint data for sample to file."
@@ -95,7 +98,7 @@ class Handler(object):
             else:
                 if req.modality != '':
                     resp = True
-                    # msg = "Retrieving %s-header." % req.modality
+                    rospy.logdebug("Retrieving %s-header." % req.modality)
                     msg = ''
                     if req.modality == 'acceleration':
                         header = self._jr.get_header_acc()
@@ -114,7 +117,7 @@ class Handler(object):
                     resp = False
                     msg = "No such joint recorder command."
         if msg != '':
-            rospy.logdebug(msg)
+            rospy.loginfo(msg)
         return JointTriggerResponse(success=resp, message=msg, header=header)
 
 
@@ -125,7 +128,7 @@ def main():
     """
     service_name = 'joint_service'
 
-    rospy.init_node(service_name)
+    rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()
     s = rospy.Service(service_name, JointTrigger, h.handle_trigger)
     rospy.loginfo('Joint recorder ready to get triggered.')

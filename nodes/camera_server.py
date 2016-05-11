@@ -49,19 +49,21 @@ class Handler(object):
         :returns: A TriggerResponse(bool success, string message).
         """
         if req.on and not self._running:
+            rospy.loginfo("Starting camera recorder ...")
             self._running = True
             resp = self._cr.start(outname=req.outname,
                                   fps=req.fps,
                                   imgsize=req.size)
             msg = "Started camera recorder."
         elif not req.on and self._running:
+            rospy.loginfo("Stopping camera recorder ...")
             self._running = False
             resp = self._cr.stop()
             msg = "Stopped camera recorder."
         else:
             resp = False
             msg = "Camera recorder already/not yet running."
-        rospy.logdebug(msg)
+        rospy.loginfo(msg)
         return CameraTriggerResponse(success=resp, message=msg)
 
 
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     """
     service_name = 'camera_service'
 
-    rospy.init_node(service_name)
+    rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()
     s = rospy.Service(service_name, CameraTrigger, h.handle_trigger)
     rospy.loginfo('Camera recorder ready to get triggered.')
