@@ -127,10 +127,10 @@ class Experiment(object):
         # robot workspace using default parameters
         self._ws = Workspace()
 
-        print "\nGetting robot state ... "
+        rospy.loginfo("Getting robot state ... ")
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
         self._init_state = self._rs.state().enabled
-        print "Enabling robot... "
+        rospy.loginfo("Enabling robot... ")
         self._rs.enable()
 
         self._limb.set_joint_position_speed(0.3)
@@ -149,12 +149,12 @@ class Experiment(object):
         """ Clean shutdown of the robot.
         :return: True on completion
         """
-        print "\nExiting joint position goal oriented motion daq ..."
+        rospy.loginfo("Exiting joint position goal oriented motion daq ...")
         self._limb.set_joint_position_speed(0.3)
         self._pub_rate.publish(100)
         self._limb.move_to_neutral()
         if not self._init_state:
-            print "Disabling robot..."
+            rospy.loginfo("Disabling robot...")
             self._rs.disable()
         return True
 
@@ -164,14 +164,15 @@ class Experiment(object):
         :param outfile: path and filename of the file(s) to write the data to,
         without the extension(s).
         """
-        print '\nRecord goal oriented motion data into %s.' % outfile
+        rospy.loginfo('Record goal oriented motion data into %s.' % outfile)
         self._head.set_pan(0.0)
         self._limb.move_to_neutral()
         try:
             for nr in range(self._number):
                 if rospy.is_shutdown():
                     break
-                print 'Recording sample %i of %d.' % (nr + 1, self._number)
+                rospy.loginfo('Recording sample %i of %d.' %
+                              (nr + 1, self._number))
 
                 if self._joints:
                     self._rec_joint.start(outfile)
@@ -306,8 +307,8 @@ class Experiment(object):
         tau_lim = settings.tau_lim(self._arm, scale=0.2)
         count = 0
         rate = rospy.Rate(settings.interpolator_rate)
-        print ("Planned trajectory is %i-dimensional and %i steps long." %
-               (trajectory.shape[1], trajectory.shape[0]))
+        rospy.loginfo("Planned trajectory is %i-dimensional and %i steps long." %
+                      (trajectory.shape[1], trajectory.shape[0]))
 
         if anomaly_pars is not None:
             """ Set up anomalies """
@@ -343,7 +344,7 @@ class Experiment(object):
                 if count >= anomaly_start and not started:
                     started = True
                     anomaly_start = count
-                    print " Inducing anomaly on joint", joint
+                    rospy.loginfo(" Inducing anomaly on joint", joint)
                     kp_mod = kpid[joint][0] * pm
                     ki_mod = kpid[joint][1] * im
                     kd_mod = kpid[joint][2] * dm
@@ -374,9 +375,9 @@ class Experiment(object):
             t_elapsed = rospy.get_time() - t_start
             count = int(np.floor(t_elapsed * settings.interpolator_rate))
         if count >= trajectory.shape[0]:
-            print " Arrived at desired configuration."
+            rospy.loginfo(" Arrived at desired configuration.")
         if t_elapsed >= settings.run_time:
-            print " Motion timed out."
+            rospy.loginfo(" Motion timed out.")
 
     def _endpoint_pose(self):
         """ Current pose of the wrist of one arm of the baxter robot.
