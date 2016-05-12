@@ -344,7 +344,7 @@ class Experiment(object):
                 if count >= anomaly_start and not started:
                     started = True
                     anomaly_start = count
-                    rospy.loginfo(" Inducing anomaly on joint", joint)
+                    rospy.loginfo("Inducing anomaly on joint '%s'." % joint)
                     kp_mod = kpid[joint][0] * pm
                     ki_mod = kpid[joint][1] * im
                     kd_mod = kpid[joint][2] * dm
@@ -375,9 +375,9 @@ class Experiment(object):
             t_elapsed = rospy.get_time() - t_start
             count = int(np.floor(t_elapsed * settings.interpolator_rate))
         if count >= trajectory.shape[0]:
-            rospy.loginfo(" Arrived at desired configuration.")
+            rospy.loginfo("Arrived at desired configuration.")
         if t_elapsed >= settings.run_time:
-            rospy.loginfo(" Motion timed out.")
+            rospy.loginfo("Motion timed out.")
 
     def _endpoint_pose(self):
         """ Current pose of the wrist of one arm of the baxter robot.
