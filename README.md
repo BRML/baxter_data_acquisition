@@ -194,7 +194,7 @@ have a look at the files for more information.
 
 
 ### Experiment convenience launch file
-There also are launch files that collect the three seperate steps above into
+There also are launch files that collect the three separate steps above into
 one file.
 This serves a two-fold purpose.
 First, it is more convenient to start the whole experiment from a single 
