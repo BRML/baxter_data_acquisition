@@ -64,7 +64,8 @@ class FlashRecorder(object):
         """ Stop recording head screen flash time stamps.
         :return: Whether the text file is open.
         """
-        self._sub.unregister()
+        if self._sub is not None:
+            self._sub.unregister()
         self._fp.close()
         return self._fp.closed
 

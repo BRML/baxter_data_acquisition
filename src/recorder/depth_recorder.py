@@ -101,7 +101,8 @@ class DepthRecorder(object):
         """ Stop recording data from the depth sensor.
         :return: Whether the binary- and text file are open.
         """
-        self._sub.unregister()
+        if self._sub is not None:
+            self._sub.unregister()
         self._fp_d.close()
         self._fp_ts.close()
         return self._fp_d.closed or self._fp_ts.closed

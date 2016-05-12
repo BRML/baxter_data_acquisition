@@ -95,7 +95,8 @@ class CameraRecorder(object):
         """ Stop recording data from the head camera.
         :return: Whether the video- and text file are open.
         """
-        self._sub.unregister()
+        if self._sub is not None:
+            self._sub.unregister()
         self._clip.release()
         self._fp.close()
         return self._clip.isOpened() or self._fp.closed

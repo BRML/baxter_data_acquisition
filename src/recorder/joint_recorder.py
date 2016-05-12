@@ -150,16 +150,26 @@ class JointRecorder(object):
 
     def stop(self):
         """ Stop joint data recording. """
-        self._sub_acc.unregister()
-        self._sub_anom.unregister()
-        self._sub_cfg_comm.unregister()
-        self._sub_cfg_des.unregister()
-        self._sub_state.unregister()
-        self._sub_efft_comm.unregister()
-        self._sub_efft_gen.unregister()
-        self._sub_efft_des.unregister()
-        self._sub_pose.unregister()
-        self._sub_pose_label.unregister()
+        if self._sub_acc is not None:
+            self._sub_acc.unregister()
+        if self._sub_anom is not None:
+            self._sub_anom.unregister()
+        if self._sub_cfg_comm is not None:
+            self._sub_cfg_comm.unregister()
+        if self._sub_cfg_des is not None:
+            self._sub_cfg_des.unregister()
+        if self._sub_state is not None:
+            self._sub_state.unregister()
+        if self._sub_efft_comm is not None:
+            self._sub_efft_comm.unregister()
+        if self._sub_efft_gen is not None:
+            self._sub_efft_gen.unregister()
+        if self._sub_efft_des is not None:
+            self._sub_efft_des.unregister()
+        if self._sub_pose is not None:
+            self._sub_pose.unregister()
+        if self._sub_pose_label is not None:
+            self._sub_pose_label.unregister()
 
     def write_sample(self):
         """ Append data of one sample to the .hdf5 joint data file. """
