@@ -102,9 +102,14 @@ class DepthRecorder(object):
         :return: Whether the binary- and text file are open.
         """
         if self._sub is not None:
+            rospy.loginfo('unregistering ...')
             self._sub.unregister()
+            rospy.loginfo('unregistered')
+        rospy.loginfo('closing binary file ...')
         self._fp_d.close()
+        rospy.loginfo('closed. closing text file ...')
         self._fp_ts.close()
+        rospy.loginfo('closed.')
         return self._fp_d.closed or self._fp_ts.closed
 
     @property

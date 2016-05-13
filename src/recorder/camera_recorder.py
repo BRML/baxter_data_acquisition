@@ -96,9 +96,14 @@ class CameraRecorder(object):
         :return: Whether the video- and text file are open.
         """
         if self._sub is not None:
+            rospy.loginfo('unregistering ...')
             self._sub.unregister()
+            rospy.loginfo('unregistered')
+        rospy.loginfo('releasing video clip ...')
         self._clip.release()
+        rospy.loginfo('released. closing text file ...')
         self._fp.close()
+        rospy.loginfo('closed')
         return self._clip.isOpened() or self._fp.closed
 
     @property

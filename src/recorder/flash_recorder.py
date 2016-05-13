@@ -65,8 +65,12 @@ class FlashRecorder(object):
         :return: Whether the text file is open.
         """
         if self._sub is not None:
+            rospy.loginfo('unregistering ...')
             self._sub.unregister()
+            rospy.loginfo('unregistered')
+        rospy.loginfo('closing text file ...')
         self._fp.close()
+        rospy.loginfo('closed')
         return self._fp.closed
 
 

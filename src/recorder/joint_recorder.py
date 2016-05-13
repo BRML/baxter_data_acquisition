@@ -151,24 +151,34 @@ class JointRecorder(object):
     def stop(self):
         """ Stop joint data recording. """
         if self._sub_acc is not None:
+            rospy.loginfo('unregistering acceleration ...')
             self._sub_acc.unregister()
         if self._sub_anom is not None:
+            rospy.loginfo('unregistering anomalies...')
             self._sub_anom.unregister()
         if self._sub_cfg_comm is not None:
+            rospy.loginfo('unregistering config commanded ...')
             self._sub_cfg_comm.unregister()
         if self._sub_cfg_des is not None:
+            rospy.loginfo('unregistering config desired ...')
             self._sub_cfg_des.unregister()
         if self._sub_state is not None:
+            rospy.loginfo('unregistering robot state ...')
             self._sub_state.unregister()
         if self._sub_efft_comm is not None:
+            rospy.loginfo('unregistering effort commanded ...')
             self._sub_efft_comm.unregister()
         if self._sub_efft_gen is not None:
+            rospy.loginfo('unregistering effort generated ...')
             self._sub_efft_gen.unregister()
         if self._sub_efft_des is not None:
+            rospy.loginfo('unregistering effort desired ...')
             self._sub_efft_des.unregister()
         if self._sub_pose is not None:
+            rospy.loginfo('unregistering pose ...')
             self._sub_pose.unregister()
         if self._sub_pose_label is not None:
+            rospy.loginfo('unregistering pose label ...')
             self._sub_pose_label.unregister()
 
     def write_sample(self):
