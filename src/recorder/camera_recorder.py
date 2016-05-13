@@ -56,12 +56,12 @@ class CameraRecorder(object):
         file.
         :return: Whether the video- and text file were opened successfully.
         """
-        try:
-            self._fp = open(outname + '.txt', 'w')
-        except IOError:
-            rospy.logfatal("start - Problem with opening text file.")
-            raise
-        self._fp.write('# timestamps [s]\n')
+        # try:
+        #     self._fp = open(outname + '.txt', 'w')
+        # except IOError:
+        #     rospy.logfatal("start - Problem with opening text file.")
+        #     raise
+        # self._fp.write('# timestamps [s]\n')
 
         self._clip = cv2.VideoWriter(outname + '.avi',
                                      fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
@@ -73,12 +73,13 @@ class CameraRecorder(object):
             raise IOError('Problem with opening VideoWriter!')
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
-        return self._clip.isOpened() and not self._fp.closed
+        return self._clip.isOpened()  # and not self._fp.closed
 
     def _add_image(self, imgmsg):
         """ Camera subscriber callback function """
-        ts = rospy.get_time()
-        self._fp.write('%f\n' % ts)
+        # ts = rospy.get_time()
+        # self._fp.write('%f\n' % ts)
+        # self._fp.flush()
 
         try:
             img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg, 'bgr8')
@@ -101,10 +102,10 @@ class CameraRecorder(object):
             rospy.loginfo('unregistered')
         rospy.loginfo('releasing video clip ...')
         self._clip.release()
-        rospy.loginfo('released. closing text file ...')
-        self._fp.close()
-        rospy.loginfo('closed')
-        return self._clip.isOpened() or self._fp.closed
+        rospy.loginfo('released.')  # closing text file ...')
+        # self._fp.close()
+        # rospy.loginfo('closed')
+        return self._clip.isOpened()  # or self._fp.closed
 
     @property
     def camera(self):
