@@ -25,6 +25,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import rosbag
 import rospy
 
 from std_srvs.srv import Trigger
@@ -51,10 +52,13 @@ class BagServer(object):
 
     def handle_trigger(self):
         if self._started:
-            print 'stop server'
+            rospy.loginfo("Stop recording from {} ...".format(self._topics))
             self._started = False
         else:
-            print 'start server'
+            rospy.loginfo("Start recording from {} ...".format(self._topics))
+            # Writing stuff to the bag file requires Subscribers again ...
+            #   http://wiki.ros.org/rosbag/Code%20API
+            # This is exactly what I wanted to avoid ...
             self._started = True
 
 
