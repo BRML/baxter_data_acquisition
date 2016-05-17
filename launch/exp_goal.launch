@@ -17,17 +17,25 @@
     </include>
 
     <!-- Start recorder servers -->
-    <include file="$(find baxter_data_acquisition)/launch/recorder.launch">
-        <arg name="joint" value="$(arg rec_joint)"/>
-        <arg name="camera" value="$(arg rec_camera)"/>
-        <arg name="kinect" value="$(arg rec_depth)"/>
-        <arg name="senz3d" value="$(arg rec_depth)"/>
-        <arg name="flash" value="$(arg rec_depth)"/>
-    </include>
+    <!--<include file="$(find baxter_data_acquisition)/launch/recorder.launch">-->
+        <!--<arg name="joint" value="$(arg rec_joint)"/>-->
+        <!--<arg name="camera" value="$(arg rec_camera)"/>-->
+        <!--<arg name="kinect" value="$(arg rec_depth)"/>-->
+        <!--<arg name="senz3d" value="$(arg rec_depth)"/>-->
+        <!--<arg name="flash" value="$(arg rec_depth)"/>-->
+    <!--</include>-->
+    <!-- rosbag intentionally does not provide any control on the order or timing
+        of node start up.
+        http://wiki.ros.org/ROS/Tutorials/Roslaunch%20tips%20for%20larger%20projects
+        Make node wait gracefully till experiment is ready? -->
+    <node name="rosbag_record_cam" pkg="rosbag" type="record"
+          required="false" respawn="true" output="screen"
+          args="-o $(find baxter_data_acquisition)/data/baxter_cam
+                /cameras/head_camera/image"/>
 
     <!-- Run experiment -->
     <node name="goal" pkg="baxter_data_acquisition" type="goal.py"
           required="true" respawn="false" output="screen" cwd="node"
           args="--limb left --number $(arg number) --joints $(arg rec_joint)
-                 --images $(arg rec_camera) --threed $(arg rec_depth)"/>
+                --images $(arg rec_camera) --threed $(arg rec_depth)"/>
 </launch>
