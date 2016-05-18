@@ -10,13 +10,20 @@
 
 
     <!-- Start simulation environment -->
-    <include if="$(arg gazebo)"
-             file="$(find baxter_data_acquisition)/launch/simulation.launch">
-        <arg name="depth_internal" value="$(arg rec_depth)"/>
-        <arg name="depth_external" value="$(arg rec_depth)"/>
-    </include>
+    <!--<include if="$(arg gazebo)"-->
+             <!--file="$(find baxter_data_acquisition)/launch/simulation.launch">-->
+        <!--<arg name="depth_internal" value="$(arg rec_depth)"/>-->
+        <!--<arg name="depth_external" value="$(arg rec_depth)"/>-->
+    <!--</include>-->
 
     <!-- Start recorder servers -->
+    <node if="$(arg rec_camera)"
+          pkg="baxter_data_acquisition" type="bag_server.py"
+          name="bag_server" required="true"
+          respawn="false" output="screen" cwd="node">
+        <!--<remap from="~topics" to="/cameras/head_camera/image"/>-->
+        <param name="~topics" value="/cameras/head_camera/image"/>
+    </node>
     <!--<include file="$(find baxter_data_acquisition)/launch/recorder.launch">-->
         <!--<arg name="joint" value="$(arg rec_joint)"/>-->
         <!--<arg name="camera" value="$(arg rec_camera)"/>-->
@@ -28,14 +35,14 @@
         of node start up.
         http://wiki.ros.org/ROS/Tutorials/Roslaunch%20tips%20for%20larger%20projects
         Make node wait gracefully till experiment is ready? -->
-    <node name="rosbag_record_cam" pkg="rosbag" type="record"
-          required="false" respawn="true" output="screen"
-          args="-o $(find baxter_data_acquisition)/data/baxter_cam
-                /cameras/head_camera/image"/>
+    <!--<node name="rosbag_record_cam" pkg="rosbag" type="record"-->
+          <!--required="false" respawn="true" output="screen"-->
+          <!--args="-o $(find baxter_data_acquisition)/data/baxter_cam-->
+                <!--/cameras/head_camera/image"/>-->
 
     <!-- Run experiment -->
-    <node name="goal" pkg="baxter_data_acquisition" type="goal.py"
-          required="true" respawn="false" output="screen" cwd="node"
-          args="--limb left --number $(arg number) --joints $(arg rec_joint)
-                --images $(arg rec_camera) --threed $(arg rec_depth)"/>
+    <!--<node name="goal" pkg="baxter_data_acquisition" type="goal.py"-->
+          <!--required="true" respawn="false" output="screen" cwd="node"-->
+          <!--args="&#45;&#45;limb left &#45;&#45;number $(arg number) &#45;&#45;joints $(arg rec_joint)-->
+                <!--&#45;&#45;images $(arg rec_camera) &#45;&#45;threed $(arg rec_depth)"/>-->
 </launch>

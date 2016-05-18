@@ -58,6 +58,7 @@ from recorder import (
     KinectClient,
     SenzClient
 )
+from recorder.bag_recorder import BagClient
 
 
 class Experiment(object):
@@ -99,7 +100,7 @@ class Experiment(object):
         if self._images:
             cam = 'head_camera'
             self._camera = baxter_interface.CameraController(cam, self._sim)
-            self._rec_cam = CameraClient()
+            self._rec_cam = BagClient()
         if self._threed:
             self._rec_senz3d = SenzClient()
             self._rec_kinect = KinectClient()
@@ -177,9 +178,7 @@ class Experiment(object):
                 if self._joints:
                     self._rec_joint.start(outfile)
                 if self._images:
-                    self._rec_cam.start(outfile + '-%i' % nr,
-                                        self._camera.fps,
-                                        self._camera.resolution)
+                    self._rec_cam.start(outfile + '-%i' % nr)
                 if self._threed:
                     self._rec_kinect.start(outfile + '-%i_kinect' % nr)
                     self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
