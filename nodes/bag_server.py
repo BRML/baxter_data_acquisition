@@ -73,6 +73,7 @@ class BagServer(object):
 
             resp = True if self._rosbag.pid else False
             self._running = True
+            rospy.loginfo("... started.")
         elif not req.on and self._running:
             msg = "Stop recording on '%s' ..." % self
             rospy.loginfo(msg)
@@ -81,6 +82,7 @@ class BagServer(object):
 
             resp = True if self._rosbag.pid else False
             self._running = False
+            rospy.loginfo("... stopped.")
         elif req.on and self._running:
             msg = "Recorder is already running. Do nothing."
             rospy.loginfo(msg)
