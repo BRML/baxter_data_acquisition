@@ -25,7 +25,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import rosbag
 import rospy
 
 from std_srvs.srv import Trigger
@@ -46,9 +45,16 @@ class BagServer(object):
 
         self._started = False
 
+    def __str__(self):
+        return rospy.get_caller_id()
+
     def clean_shutdown(self):
-        rospy.loginfo("Shutting down bag server ...")
+        rospy.loginfo("Shutting down bag server '%s' ..." % self)
         return True
+
+    def set_up(self):
+        while not rospy.has_param('data/path'):
+            pass
 
     def handle_trigger(self):
         if self._started:
@@ -71,6 +77,6 @@ if __name__ == "__main__":
     rospy.on_shutdown(bs.clean_shutdown)
 
     s = rospy.Service(service_name, Trigger, bs.handle_trigger)
-    rospy.loginfo('Bag recorder ready to get triggered ...')
+    rospy.loginfo("Bag recorder '%s' ready to get triggered ..." % bs)
 
     rospy.spin()
