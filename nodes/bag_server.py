@@ -25,47 +25,75 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import os
 import rospy
+import signal
+import subprocess
 
-from std_srvs.srv import Trigger
+from baxter_data_acquisition.srv import Trigger, TriggerResponse
 
 
 class BagServer(object):
     def __init__(self):
-        topics = rospy.get_param('~topics', 'topic')
-        print topics
-        if topics == 'topic':
-            rospy.logwarn("Topic '~topics' has not been remapped! Typical command-line usage:")
-            rospy.logwarn("  $ rosrun baxter_data_acquisition bag_server _topics:=<ROS topic>")
+        default_topic = '<ROS_topic_1 ROS_topic_2 ...>'
+        topics = rospy.get_param('~topics', default_topic)
+        if topics == default_topic:
+            rospy.logfatal("Topic '~topics' has not been remapped! Typical command-line usage:")
+            rospy.logfatal("  $ rosrun baxter_data_acquisition bag_server _topics:=%s" % default_topic)
             rospy.signal_shutdown("Topic '~topics' is required!")
-        else:
-            self._topics = topics.split(' ')
-            for topic in self._topics:
-                print "Topic '~topics' is '%s'." % rospy.resolve_name(topic)
 
-        self._started = False
+        self._topics = topics.split(' ')
+        rospy.loginfo("Got %d topic(s):" % len(self._topics))
+        for idx, topic in enumerate(self._topics):
+            rospy.loginfo("- topic %d: %s" % (idx, topic))
+
+        self._running = False
+        self._rosbag = None
 
     def __str__(self):
         return rospy.get_caller_id()
 
     def clean_shutdown(self):
-        rospy.loginfo("Shutting down bag server '%s' ..." % self)
+        rospy.loginfo("Shutting down '%s' ..." % self)
         return True
 
-    def set_up(self):
-        while not rospy.has_param('data/path'):
-            pass
+    def handle_trigger(self, req):
+        if req.on and not self._running:
+            msg = "Start recording on '%s' ..." % self
+            rospy.loginfo(msg)
 
-    def handle_trigger(self):
-        if self._started:
-            rospy.loginfo("Stop recording from {} ...".format(self._topics))
-            self._started = False
+            start_cmd = "rosbag record"
+            if req.outname:
+                start_cmd += ' -O %s' % req.outname
+            else:
+                rospy.logdebug("No filename provided! Recording to default name.")
+            for topic in self._topics:
+                start_cmd += " %s" % topic
+            self._rosbag = subprocess.Popen(start_cmd, shell=True, preexec_fn=os.setsid)
+
+            resp = True if self._rosbag.pid else False
+            self._running = True
+        elif not req.on and self._running:
+            msg = "Stop recording on '%s' ..." % self
+            rospy.loginfo(msg)
+
+            os.killpg(self._rosbag.pid, signal.SIGINT)
+
+            resp = True if self._rosbag.pid else False
+            self._running = False
+        elif req.on and self._running:
+            msg = "Recorder is already running. Do nothing."
+            rospy.loginfo(msg)
+            resp = True
+        elif not req.on and not self._running:
+            msg = "Recorder is not running. Do nothing."
+            rospy.loginfo(msg)
+            resp = True
         else:
-            rospy.loginfo("Start recording from {} ...".format(self._topics))
-            # Writing stuff to the bag file requires Subscribers again ...
-            #   http://wiki.ros.org/rosbag/Code%20API
-            # This is exactly what I wanted to avoid ...
-            self._started = True
+            msg = 'This cannot happen!'
+            rospy.logerr(msg)
+            resp = False
+        return TriggerResponse(success=resp, message=msg)
 
 
 if __name__ == "__main__":
