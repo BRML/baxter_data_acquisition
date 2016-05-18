@@ -42,7 +42,7 @@ class BagServer(object):
             rospy.logfatal("  $ rosrun baxter_data_acquisition bag_server _topics:=%s" % default_topic)
             rospy.signal_shutdown("Topic '~topics' is required!")
 
-        self._topics = topics.split(' ')
+        self._topics = [t for t in topics.split(' ') if len(t.strip()) > 0]
         rospy.loginfo("Got %d topic(s):" % len(self._topics))
         for idx, topic in enumerate(self._topics):
             rospy.loginfo("- topic %d: %s" % (idx, topic))
