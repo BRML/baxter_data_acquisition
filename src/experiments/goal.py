@@ -54,7 +54,7 @@ from control import (
 from recorder import (
     CameraClient,
     FlashClient,
-    JointClient,
+    JointRecorder,
     KinectClient,
     SenzClient
 )
@@ -82,9 +82,9 @@ class Experiment(object):
 
         self._limb = baxter_interface.Limb(self._arm)
         if self._joints:
-            self._rec_joint = JointClient(limb=self._arm,
-                                          rate=settings.recording_rate,
-                                          anomaly_mode='automatic')
+            self._rec_joint = JointRecorder(limb=self._arm,
+                                            rate=settings.recording_rate,
+                                            anomaly_mode='automatic')
         self._head = baxter_interface.Head()
         self._jns = settings.joint_names(self._arm)
         self._ipl = BangBangInterpolator(limb=self._arm,
@@ -97,14 +97,15 @@ class Experiment(object):
         self._kin = baxter_kinematics(self._arm)
         self._lim = [settings.q_lim(self._arm)[jn] for jn in self._jns]
 
+        self._rec_bag = BagClient()
         if self._images:
             cam = 'head_camera'
             self._camera = baxter_interface.CameraController(cam, self._sim)
-            self._rec_cam = BagClient()
-        if self._threed:
-            self._rec_senz3d = SenzClient()
-            self._rec_kinect = KinectClient()
-            self._rec_flash = FlashClient()
+        #     self._rec_cam = BagClient()
+        # if self._threed:
+        #     self._rec_senz3d = SenzClient()
+        #     self._rec_kinect = KinectClient()
+        #     self._rec_flash = FlashClient()
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
@@ -168,6 +169,8 @@ class Experiment(object):
         rospy.loginfo('Record goal oriented motion data into %s.' % outfile)
         self._head.set_pan(0.0)
         self._limb.move_to_neutral()
+        self._rec_bag.start(outname=outfile)
+        rospy.sleep(1.0)
         try:
             for nr in range(self._number):
                 if rospy.is_shutdown():
@@ -175,29 +178,31 @@ class Experiment(object):
                 rospy.loginfo('Recording sample %i of %d.' %
                               (nr + 1, self._number))
 
-                if self._joints:
-                    self._rec_joint.start(outfile)
-                if self._images:
-                    self._rec_cam.start(outfile + '-%i' % nr)
-                if self._threed:
-                    self._rec_kinect.start(outfile + '-%i_kinect' % nr)
-                    self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
-                    self._rec_flash.start(outfile + '-%i_flash_white' % nr)
+                # if self._joints:
+                #     self._rec_joint.start(outfile)
+                # if self._images:
+                #     self._rec_cam.start(outfile + '-%i' % nr)
+                # if self._threed:
+                #     self._rec_kinect.start(outfile + '-%i_kinect' % nr)
+                #     self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
+                #     self._rec_flash.start(outfile + '-%i_flash_white' % nr)
                 flash_screen(3, 0.5, 0.5)
                 self._one_sample()
-                if self._images:
-                    self._rec_cam.stop()
-                if self._threed:
-                    self._rec_kinect.stop()
-                    self._rec_senz3d.stop()
-                    self._rec_flash.stop()
-                if self._joints:
-                    self._rec_joint.stop()
-                    self._rec_joint.write_sample()
+                # if self._images:
+                #     self._rec_cam.stop()
+                # if self._threed:
+                #     self._rec_kinect.stop()
+                #     self._rec_senz3d.stop()
+                #     self._rec_flash.stop()
+                # if self._joints:
+                #     self._rec_joint.stop()
+                #     self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
             pass
         finally:
             self._limb.move_to_neutral()
+        rospy.sleep(1.0)
+        self._rec_bag.stop()
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self, verbose=False):

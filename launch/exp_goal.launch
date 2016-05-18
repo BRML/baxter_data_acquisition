@@ -21,8 +21,21 @@
           pkg="baxter_data_acquisition" type="bag_server.py"
           name="bag_server" required="true"
           respawn="false" output="screen" cwd="node">
-        <!--<remap from="~topics" to="/cameras/head_camera/image"/>-->
-        <param name="~topics" value="/cameras/head_camera/image"/>
+        <param name="~topics" value="/cameras/head_camera/image
+                                     /data/limb/left/cfg/des
+                                     /data/limb/left/cfg/comm
+                                     /data/limb/left/efft/gen
+                                     /data/limb/left/efft/des
+                                     /data/limb/left/pose/label
+                                     /data/limb/left/anomaly
+                                     /data/head/flash_white
+                                     /robot/joint_states
+                                     /robot/limb/left/joint_command
+                                     /robot/limb/left/endpoint_state
+                                     /kinect/rgb/image
+                                     /kinect/depth/image
+                                     /senz3d/rgb/image
+                                     /senz3d/depth/image"/>
     </node>
     <!--<include file="$(find baxter_data_acquisition)/launch/recorder.launch">-->
         <!--<arg name="joint" value="$(arg rec_joint)"/>-->
