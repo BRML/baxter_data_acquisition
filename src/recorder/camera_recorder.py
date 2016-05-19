@@ -68,12 +68,12 @@ class CameraRecorder(object):
         self._count = 0
         self._t_start = rospy.get_time()
 
-        # try:
-        #     self._fp = open(outname + '.txt', 'w')
-        # except IOError as e:
-        #     rospy.logfatal("'%s' Failed to open text file!" % self)
-        #     raise e
-        # self._fp.write('# timestamps [s]\n')
+        try:
+            self._fp = open(outname + '.txt', 'w')
+        except IOError as e:
+            rospy.logfatal("'%s' Failed to open text file!" % self)
+            raise e
+        self._fp.write('# timestamps [s]\n')
 
         self._clip = cv2.VideoWriter(outname + '.avi',
                                      fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
@@ -87,13 +87,13 @@ class CameraRecorder(object):
         # TODO: make sure to use the right camera property here
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
-        return self._clip.isOpened()  # and not self._fp.closed
+        return self._clip.isOpened() and not self._fp.closed
 
     def _add_image(self, imgmsg):
         """ Camera subscriber callback function """
-        # ts = rospy.get_time()
-        # self._fp.write('%f\n' % ts)
-        # self._fp.flush()
+        ts = rospy.get_time()
+        self._fp.write('%f\n' % ts)
+        self._fp.flush()
 
         try:
             img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg, 'bgr8')
@@ -119,12 +119,12 @@ class CameraRecorder(object):
         rospy.loginfo("'%s' Closing video file ..." % self)
         self._clip.release()
         rospy.loginfo("'%s' ... closed video file." % self)
-        # rospy.loginfo("'%s' Closing text file ..." % self)
-        # self._fp.close()
-        # rospy.loginfo("'%s' ... closed text file." % self)
+        rospy.loginfo("'%s' Closing text file ..." % self)
+        self._fp.close()
+        rospy.loginfo("'%s' ... closed text file." % self)
 
         self._display_performance()
-        return self._clip.isOpened()  # or self._fp.closed
+        return self._clip.isOpened() or self._fp.closed
 
     def _display_performance(self):
         """ Log performance information (messages received). """
