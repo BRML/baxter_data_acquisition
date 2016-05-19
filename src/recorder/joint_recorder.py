@@ -58,63 +58,31 @@ class JointRecorder(object):
         'automatic', 'none'].
         :return: Joint recorder instance.
         """
-        self._header = dict()
-        self._header['configuration'] = ['time',
-                                         limb + '_s0', limb + '_s1',
-                                         limb + '_e0', limb + '_e1',
-                                         limb + '_w0', limb + '_w1',
-                                         limb + '_w2']
-        self._header['acceleration'] = ['time', limb + '_x',
-                                        limb + '_y', limb + '_z']
-        self._header['effort'] = self._header['configuration']
-        self._header['pose'] = ['time',
-                                limb + '_px', limb + '_py', limb + '_pz',
-                                limb + '_qx', limb + '_qy', limb + '_qz',
-                                limb + '_qw']
-        if anomaly_mode == 'manual':
-            self._header['anomaly'] = ['time',
-                                       "partId (0-shoulder, 1-s1, "
-                                       "2-upper arm, 3-e1, 4-lower arm, "
-                                       "5-w1, 6-palm, 7-w2)"]
-        elif anomaly_mode == 'automatic':
-            self._header['anomaly'] = ['time', 'P multiplier',
-                                       'I multiplier', 'D multiplier',
-                                       'additive', 'jointId', 'mode', 'type']
-        else:
-            self._header['anomaly'] = ['', ]
         self._arm = limb
         self._rate = rospy.Rate(rate)
         self._anomaly_mode = anomaly_mode
+
+        self._header = dict()
+        self._define_headers()
+
         self._filename = None
+        self._topics = list()
+        self._define_subscriber_topics()
         self._data = None
-        self._sub_acc = None
-        self._sub_anom = None
-        self._sub_cfg_comm = None
-        self._sub_cfg_des = None
-        self._sub_state = None
-        self._sub_efft_comm = None
-        self._sub_efft_gen = None
-        self._sub_efft_des = None
-        self._sub_pose = None
-        self._sub_pose_label = None
-        self._count = {'acceleration measured': 0,
-                       'anomaly commanded': 0,
-                       'configuration commanded': 0,
-                       'configuration desired': 0,
-                       'configuration measured': 0,
-                       'effort commanded': 0,
-                       'effort generated': 0,
-                       'effort desired': 0,
-                       'effort measured': 0,
-                       'pose measured': 0,
-                       'pose label': 0}
-        self._start = None
+        self._subs = {n: None for n in self._topics}
+
+        self._t_start = None
+
+    def __str__(self):
+        return rospy.get_caller_id()
 
     def start(self, outfile):
         """ Start joint data recording.
         :param outfile: Filename to write the data to, without the extension.
         """
         self._filename = outfile + '.h5'
+        self._t_start = rospy.get_time()
+
         self._data = dict()
         self._data['acceleration'] = dict()
         self._data['acceleration']['measured'] = list()
@@ -133,187 +101,209 @@ class JointRecorder(object):
         self._data['pose']['measured'] = list()
         self._data['pose']['label'] = list()
 
-        self._sub_acc = rospy.Subscriber('/robot/accelerometer/' + self._arm +
-                                         '_accelerometer/state', Imu,
-                                         self._cb_acc, queue_size=1)
-        ns = 'data/limb/' + self._arm
-        self._sub_anom = rospy.Subscriber(ns + '/anomaly', Float64MultiArray,
-                                          self._cb_anom, queue_size=1)
-        self._sub_cfg_comm = rospy.Subscriber(ns + '/cfg/comm', JointCommand,
-                                              self._cb_cfg_comm, queue_size=1)
-        self._sub_cfg_des = rospy.Subscriber(ns + '/cfg/des', JointCommand,
-                                             self._cb_cfg_des, queue_size=1)
-        self._sub_state = rospy.Subscriber('/robot/joint_states', JointState,
-                                           self._cb_state, queue_size=1)
-        self._sub_efft_comm = rospy.Subscriber('/robot/limb/' + self._arm +
-                                               '/joint_command', JointCommand,
-                                               self._cb_efft_comm,
-                                               queue_size=1)
-        self._sub_efft_gen = rospy.Subscriber(ns + '/efft/gen', JointCommand,
-                                              self._cb_efft_gen, queue_size=1)
-        self._sub_efft_des = rospy.Subscriber(ns + '/efft/des', JointCommand,
-                                              self._cb_efft_des, queue_size=1)
-        self._sub_pose = rospy.Subscriber('/robot/limb/' + self._arm +
-                                          '/endpoint_state', EndpointState,
-                                          self._cb_pose, queue_size=1)
-        self._sub_pose_label = rospy.Subscriber(ns + '/pose/label', UInt16,
-                                                self._cb_pose_label,
-                                                queue_size=1)
-
-        for k in self._count:
-            self._count[k] = 0
-        self._start = rospy.get_time()
+        for name in self._topics:
+            topic, msg_type, callback = self._topics[name]
+            self._subs[name] = rospy.Subscriber(topic, msg_type, callback,
+                                                queue_size=10)
+        return True
 
     def stop(self):
         """ Stop joint data recording. """
-        if self._sub_acc is not None:
-            rospy.loginfo('unregistering acceleration ...')
-            self._sub_acc.unregister()
-        if self._sub_anom is not None:
-            rospy.loginfo('unregistering anomalies...')
-            self._sub_anom.unregister()
-        if self._sub_cfg_comm is not None:
-            rospy.loginfo('unregistering config commanded ...')
-            self._sub_cfg_comm.unregister()
-        if self._sub_cfg_des is not None:
-            rospy.loginfo('unregistering config desired ...')
-            self._sub_cfg_des.unregister()
-        if self._sub_state is not None:
-            rospy.loginfo('unregistering robot state ...')
-            self._sub_state.unregister()
-        if self._sub_efft_comm is not None:
-            rospy.loginfo('unregistering effort commanded ...')
-            self._sub_efft_comm.unregister()
-        if self._sub_efft_gen is not None:
-            rospy.loginfo('unregistering effort generated ...')
-            self._sub_efft_gen.unregister()
-        if self._sub_efft_des is not None:
-            rospy.loginfo('unregistering effort desired ...')
-            self._sub_efft_des.unregister()
-        if self._sub_pose is not None:
-            rospy.loginfo('unregistering pose ...')
-            self._sub_pose.unregister()
-        if self._sub_pose_label is not None:
-            rospy.loginfo('unregistering pose label ...')
-            self._sub_pose_label.unregister()
-        duration = rospy.get_time() - self._start
-        for k in self._count:
-            rospy.loginfo("'%s' received %d %s-frames in %f s (%f Hz)." % (
-                rospy.get_caller_id(), self._count[k], k, duration, self._count[k]/duration))
+        # TODO: is there a way to process the remaining subscriber queue before closing it?
+        for name in self._subs:
+            if self._subs[name] is not None:
+                rospy.loginfo("'%s' Unregister subscriber '%s' ..." % (self, name))
+                self._subs[name].unregister()
+                rospy.loginfo("'%s' ... unregistered subscriber '%s'." % (self, name))
+
+        self._display_performance()
+        return True
 
     def write_sample(self):
         """ Append data of one sample to the .hdf5 joint data file. """
-        pass
-        # if not os.path.exists(self._filename):
-        #     mode = 'w'
-        # else:
-        #     mode = 'a'
-        # with h5py.File(self._filename, mode) as fp:
-        #     idx = len(fp)
-        #     g = fp.require_group('%i' % idx)
-        #     for modality in self._data:
-        #         if modality == 'anomaly':
-        #             if len(self._data['anomaly']['commanded']) == 0:
-        #                 # no anomaly in this sample
-        #                 continue
-        #         elif modality == 'acceleration':
-        #             if len(self._data['acceleration']['measured']) == 0:
-        #                 # no acceleration in this sample (simulation)
-        #                 continue
-        #         gm = g.require_group(modality)
-        #         for field in self._data[modality]:
-        #             data = np.asarray(self._data[modality][field])
-        #             if data.shape == (0,):
-        #                 continue
-        #             gf = gm.require_dataset(field, shape=data.shape,
-        #                                     dtype=data.dtype, data=data)
-        #             if modality == 'pose' and field == 'label':
-        #                 gf.attrs.create('Header', data=['time', 'index'])
-        #             else:
-        #                 gf.attrs.create('Header', data=self._header[modality])
+        if not os.path.exists(self._filename):
+            mode = 'w'
+        else:
+            mode = 'a'
+        with h5py.File(self._filename, mode) as fp:
+            idx = len(fp)
+            g = fp.require_group('%i' % idx)
+            for modality in self._data:
+                if modality == 'anomaly':
+                    if len(self._data['anomaly']['commanded']) == 0:
+                        # no anomaly in this sample
+                        continue
+                elif modality == 'acceleration':
+                    if len(self._data['acceleration']['measured']) == 0:
+                        # no acceleration in this sample (simulation)
+                        continue
+                gm = g.require_group(modality)
+                for field in self._data[modality]:
+                    data = np.asarray(self._data[modality][field])
+                    if data.shape == (0,):
+                        continue
+                    gf = gm.require_dataset(field, shape=data.shape,
+                                            dtype=data.dtype, data=data)
+                    if modality == 'pose' and field == 'label':
+                        gf.attrs.create('Header', data=['time', 'index'])
+                    else:
+                        gf.attrs.create('Header', data=self._header[modality])
         # print 'Done writing sample data to file.'
 
+    def _display_performance(self):
+        """ Log performance information (messages received). """
+        duration = rospy.get_time() - self._t_start
+        for name in self._topics:
+            modality, field = name.split(' ')
+            if '/' in modality:
+                modality = modality.split('/')[0]
+            count = len(self._data[modality][field])
+            rospy.loginfo("'%s' Received %d %s-messages in %.2f s (%.2f Hz)." %
+                          (self, count, name, duration, count / duration))
+
+    def _define_subscriber_topics(self):
+        """ Define the subscriber topics for the different recorded modalities.
+        Each entry is  a tuple defining
+          {name: (ROS topic, ROS message type, callback function)}.
+        """
+        ns = '/data/limb/' + self._arm
+        self._topics = {'acceleration measured':
+                            ('/robot/accelerometer/' + self._arm + '_accelerometer/state',
+                             Imu,
+                             self._cb_acc),
+                        'anomaly commanded':
+                            (ns + '/anomaly',
+                             Float64MultiArray,
+                             self._cb_anom),
+                        'configuration commanded':
+                            (ns + '/cfg/comm',
+                             JointCommand,
+                             self._cb_cfg_comm),
+                        'configuration desired':
+                            (ns + '/cfg/des',
+                             JointCommand,
+                             self._cb_cfg_des),
+                        'configuration/effort measured':
+                            ('/robot/joint_states',
+                             JointState,
+                             self._cb_state),
+                        'effort commanded':
+                            ('/robot/limb/' + self._arm + '/joint_command',
+                             JointCommand,
+                             self._cb_efft_comm),
+                        'effort generated':
+                            (ns + '/efft/gen',
+                             JointCommand,
+                             self._cb_efft_gen),
+                        'effort desired':
+                            (ns + '/efft/des',
+                             JointCommand,
+                             self._cb_efft_des),
+                        'pose measured':
+                            ('/robot/limb/' + self._arm + '/endpoint_state',
+                             EndpointState,
+                             self._cb_pose),
+                        'pose label':
+                            (ns + '/pose/label',
+                             UInt16,
+                             self._cb_pose_label)}
+
     def _cb_acc(self, data):
-        self._count['acceleration measured'] += 1
-        # acc = data.linear_acceleration
-        # self._data['acceleration']['measured'].append([rospy.get_time(),
-        #                                                acc.x, acc.y, acc.z])
+        acc = data.linear_acceleration
+        self._data['acceleration']['measured'].append([rospy.get_time(),
+                                                       acc.x, acc.y, acc.z])
         self._rate.sleep()
 
     def _cb_anom(self, data):
-        self._count['anomaly commanded'] += 1
-        # anom = list(data.data)
-        # self._data['anomaly']['commanded'].append([rospy.get_time()] + anom)
+        anom = list(data.data)
+        self._data['anomaly']['commanded'].append([rospy.get_time()] + anom)
 
     def _cb_cfg_comm(self, data):
-        self._count['configuration commanded'] += 1
-        # cfg = list(data.command)
-        # self._data['configuration']['commanded'].append(
-        #         [rospy.get_time()] + cfg)
+        cfg = list(data.command)
+        self._data['configuration']['commanded'].append(
+                [rospy.get_time()] + cfg)
         self._rate.sleep()
 
     def _cb_cfg_des(self, data):
-        self._count['configuration desired'] += 1
-        # cfg = list(data.command)
-        # self._data['configuration']['desired'].append([rospy.get_time()] + cfg)
+        cfg = list(data.command)
+        self._data['configuration']['desired'].append([rospy.get_time()] + cfg)
 
     def _cb_state(self, data):
-        self._count['configuration measured'] += 1
-        self._count['effort measured'] += 1
-        # time = rospy.get_time()
-        # name = list(data.name)
-        # pos = list(data.position)
-        # effort = list(data.effort)
-        # try:
-        #     p = [pos[name.index(j)] for j in self._header['configuration'][1:]]
-        #     self._data['configuration']['measured'].append([time] + p)
-        #     e = [effort[name.index(j)] for j in self._header['effort'][1:]]
-        #     self._data['effort']['measured'].append([time] + e)
-        # except ValueError:
-        #     # there seems to be a BUG: every few callbacks name is not joints
-        #     # but ['r_gripper_l_finger_joint'] with corresponding pos and efft
-        #     pass
+        time = rospy.get_time()
+        name = list(data.name)
+        pos = list(data.position)
+        effort = list(data.effort)
+        try:
+            p = [pos[name.index(j)] for j in self._header['configuration'][1:]]
+            self._data['configuration']['measured'].append([time] + p)
+            e = [effort[name.index(j)] for j in self._header['effort'][1:]]
+            self._data['effort']['measured'].append([time] + e)
+        except ValueError:
+            # there seems to be a BUG: every few callbacks name is not joints
+            # but ['r_gripper_l_finger_joint'] with corresponding pos and efft
+            pass
         self._rate.sleep()
 
     def _cb_efft_comm(self, data):
-        self._count['effort commanded'] += 1
-        # name = list(data.names)
-        # effort = list(data.command)
-        # try:
-        #     e = [effort[name.index(j)] for j in self._header['effort'][1:]]
-        #     self._data['effort']['commanded'].append([rospy.get_time()] + e)
-        # except ValueError:
-        #     print "ERROR-cb_efft_comm %i-Key does not exist." % data.header.seq
+        name = list(data.names)
+        effort = list(data.command)
+        try:
+            e = [effort[name.index(j)] for j in self._header['effort'][1:]]
+            self._data['effort']['commanded'].append([rospy.get_time()] + e)
+        except ValueError:
+            print "ERROR-cb_efft_comm %i-Key does not exist." % data.header.seq
         self._rate.sleep()
 
     def _cb_efft_gen(self, data):
-        self._count['effort generated'] += 1
-        # effort = list(data.command)
-        # self._data['effort']['generated'].append([rospy.get_time()] + effort)
+        effort = list(data.command)
+        self._data['effort']['generated'].append([rospy.get_time()] + effort)
         self._rate.sleep()
 
     def _cb_efft_des(self, data):
-        self._count['effort desired'] += 1
-        # effort = list(data.command)
-        # self._data['effort']['desired'].append([rospy.get_time()] + effort)
+        effort = list(data.command)
+        self._data['effort']['desired'].append([rospy.get_time()] + effort)
         self._rate.sleep()
 
     def _cb_pose(self, data):
-        self._count['pose measured'] += 1
-        # pose = [data.pose.position.x,
-        #         data.pose.position.y,
-        #         data.pose.position.z,
-        #         data.pose.orientation.x,
-        #         data.pose.orientation.y,
-        #         data.pose.orientation.z,
-        #         data.pose.orientation.w]
-        # self._data['pose']['measured'].append([rospy.get_time()] + pose)
+        pose = [data.pose.position.x,
+                data.pose.position.y,
+                data.pose.position.z,
+                data.pose.orientation.x,
+                data.pose.orientation.y,
+                data.pose.orientation.z,
+                data.pose.orientation.w]
+        self._data['pose']['measured'].append([rospy.get_time()] + pose)
         self._rate.sleep()
 
     def _cb_pose_label(self, data):
-        # self._data['pose']['label'].append([rospy.get_time(), data.data])
-        self._count['pose label'] += 1
+        self._data['pose']['label'].append([rospy.get_time(), data.data])
         self._rate.sleep()
+
+    def _define_headers(self):
+        """ Define the headers for the different recorded modalities. """
+        self._header['acceleration'] = \
+            ['time'] + [self._arm + '_' + a for a in ['x', 'y', 'z']]
+
+        self._header['configuration'] = \
+            ['time'] + [self._arm + '_' + j
+                        for j in ['s0', 's1', 'e0', 'e1', 'w0', 'w1', 'w2']]
+        self._header['effort'] = self._header['configuration']
+
+        self._header['pose'] = \
+            ['time'] + [self._arm + '_' + k
+                        for k in ['px', 'py', 'pz', 'qx', 'qy', 'qz', 'qw']]
+
+        if self._anomaly_mode == 'manual':
+            self._header['anomaly'] = ['time',
+                                       "partId (0-shoulder, 1-s1, "
+                                       "2-upper arm, 3-e1, 4-lower arm, "
+                                       "5-w1, 6-palm, 7-w2)"]
+        elif self._anomaly_mode == 'automatic':
+            self._header['anomaly'] = ['time', 'P multiplier',
+                                       'I multiplier', 'D multiplier',
+                                       'additive', 'jointId', 'mode', 'type']
+        else:
+            self._header['anomaly'] = ['']
 
     def get_header_acc(self):
         """ Return acceleration data header.
