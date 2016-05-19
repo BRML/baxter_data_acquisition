@@ -40,6 +40,13 @@ class Handler(object):
         self._setup = False
         self._running = False
 
+    def __str__(self):
+        return rospy.get_caller_id()
+
+    def clean_shutdown(self):
+        rospy.loginfo("Exiting %s." % self)
+        return True
+
     def handle_trigger(self, req):
         """ Handler handle for the joint recorder server.
         Gets a request service message, specified by Trigger.srv, to start or
@@ -57,44 +64,44 @@ class Handler(object):
                                          anomaly_mode=mode)
                 self._setup = True
                 resp = True
-                msg = "Joint recorder successfully set up."
+                msg = "%s successfully set up." % self
             else:
-                msg = "Need to set up JointClient first!"
+                msg = "Need to set up %s first!" % self
                 rospy.logerr(msg)
                 return JointTriggerResponse(success=False, message=msg)
         else:  # Joint Recorder is set up, joint server can do its thing
             if req.setup != '':
                 resp = True
-                msg = "Joint recorder already set up."
+                msg = "%s already set up." % self
             elif req.task == 'on':
                 if not self._running:
-                    rospy.loginfo("Starting joint recorder ...")
+                    rospy.loginfo("Starting %s ..." % self)
                     self._jr.start(outfile=req.outname)
                     self._running = True
                     resp = True
-                    msg = "Started joint recorder."
+                    msg = "... %s started." % self
                 else:
                     resp = False
-                    msg = "Joint recorder already running."
+                    msg = "%s already running." % self
             elif req.task == 'off':
                 if self._running:
-                    rospy.loginfo("Stopping joint recorder ...")
+                    rospy.loginfo("Stopping %s ..." % self)
                     self._jr.stop()
                     self._running = False
                     resp = True
-                    msg = "Stopped joint recorder."
+                    msg = "... %s stopped." % self
                 else:
                     resp = False
-                    msg = "Joint recorder not yet running."
+                    msg = "%s not yet running." % self
             elif req.task == 'write':
                 if not self._running:
-                    rospy.loginfo("Writing joint data ...")
+                    rospy.loginfo("%s writes joint data ..." % self)
                     self._jr.write_sample()
                     resp = True
-                    msg = "Done writing joint data for sample to file."
+                    msg = "... %s is done writing joint data for sample to file." % self
                 else:
                     resp = False
-                    msg = "Need to stop joint recorder first."
+                    msg = "Need to stop %s first." % self
             else:
                 if req.modality != '':
                     resp = True
@@ -115,7 +122,7 @@ class Handler(object):
                         msg = "No such header: '%s'." % req.modality
                 else:
                     resp = False
-                    msg = "No such joint recorder command."
+                    msg = "No such %s-command." % self
         if msg != '':
             rospy.loginfo(msg)
         return JointTriggerResponse(success=resp, message=msg, header=header)
@@ -130,8 +137,11 @@ def main():
 
     rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()
+    rospy.on_shutdown(h.clean_shutdown)
+
     s = rospy.Service(service_name, JointTrigger, h.handle_trigger)
-    rospy.loginfo('Joint recorder ready to get triggered.')
+    rospy.loginfo('%s ready to get triggered.' % h)
+
     rospy.spin()
 
 
