@@ -20,10 +20,6 @@
           respawn="false" output="screen" cwd="node"/>
 
     <!-- launch Kinect Recorder server node -->
-    <!--<node if="$(arg kinect)"-->
-          <!--pkg="baxter_data_acquisition" type="kinect_server.py"-->
-          <!--name="kinect_recorder_server" required="true"-->
-          <!--respawn="false" output="screen" cwd="node"/>-->
     <node if="$(arg kinect)"
           pkg="baxter_data_acquisition" type="trigger_server.py"
           name="recorder_server" ns="kinect_recorder" required="true"
@@ -32,10 +28,6 @@
     </node>
 
     <!-- launch Senz3d Recorder server node -->
-    <!--<node if="$(arg senz3d)"-->
-          <!--pkg="baxter_data_acquisition" type="senz_server.py"-->
-          <!--name="senz3d_recorder_server" required="true"-->
-          <!--respawn="false" output="screen" cwd="node"/>-->
     <node if="$(arg senz3d)"
           pkg="baxter_data_acquisition" type="trigger_server.py"
           name="recorder_server" ns="senz3d_recorder" required="true"
@@ -44,10 +36,6 @@
     </node>
 
     <!-- launch FlashRecorder server node -->
-    <!--<node if="$(arg flash)"-->
-          <!--pkg="baxter_data_acquisition" type="flash_server.py"-->
-          <!--name="flash_recorder_server" required="true"-->
-          <!--respawn="false" output="screen" cwd="node"/>-->
     <node if="$(arg flash)"
           pkg="baxter_data_acquisition" type="trigger_server.py"
           name="recorder_server" ns="flash_recorder" required="true"
