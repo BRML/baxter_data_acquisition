@@ -22,7 +22,7 @@ from joint_recorder import (
     JointRecorder
 )
 
-from server import RecorderServer
+from recorder_server import RecorderServer
 
 from flash_recorder import (
     FlashClient,
