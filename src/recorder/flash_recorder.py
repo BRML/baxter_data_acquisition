@@ -86,7 +86,7 @@ class FlashRecorder(object):
 
 class FlashClient(object):
     def __init__(self):
-        self._service_name = 'flash_service'
+        self._service_name = 'flash_recorder/trigger_service'
 
     def start(self, outname):
         """ Start screen flash recorder hosted on Flash recorder server.

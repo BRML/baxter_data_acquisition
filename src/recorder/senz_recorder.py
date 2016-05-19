@@ -63,7 +63,7 @@ class SenzRecorder(object):
 
 class SenzClient(object):
     def __init__(self):
-        self._service_name = 'senz3d_service'
+        self._service_name = 'senz3d_recorder/trigger_service'
 
     def start(self, outname):
         """ Start Senz3d recorder hosted on Senz3d recorder server.

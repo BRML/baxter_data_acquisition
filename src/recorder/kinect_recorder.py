@@ -63,7 +63,7 @@ class KinectRecorder(object):
 
 class KinectClient(object):
     def __init__(self):
-        self._service_name = 'kinect_service'
+        self._service_name = 'kinect_recorder/trigger_service'
 
     def start(self, outname):
         """ Start Kinect recorder hosted on Kinect recorder server.
