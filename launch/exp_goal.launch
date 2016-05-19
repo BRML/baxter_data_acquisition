@@ -19,10 +19,15 @@
     <!-- Start recorder servers -->
     <node if="$(arg rec_camera)"
           pkg="baxter_data_acquisition" type="bag_server.py"
-          name="bag_server" required="true"
+          name="camera_bag" ns="cam_bag_service" required="true"
           respawn="false" output="screen" cwd="node">
-        <param name="~topics" value="/cameras/head_camera/image
-                                     /data/limb/left/cfg/des
+        <param name="~topics" value="/cameras/head_camera/image"/>
+    </node>
+    <node if="$(arg rec_joint)"
+          pkg="baxter_data_acquisition" type="bag_server.py"
+          name="joint_bag" ns="joint_bag_service" required="true"
+          respawn="false" output="screen" cwd="node">
+        <param name="~topics" value="/data/limb/left/cfg/des
                                      /data/limb/left/cfg/comm
                                      /data/limb/left/efft/gen
                                      /data/limb/left/efft/des
@@ -31,8 +36,13 @@
                                      /data/head/flash_white
                                      /robot/joint_states
                                      /robot/limb/left/joint_command
-                                     /robot/limb/left/endpoint_state
-                                     /kinect/rgb/image
+                                     /robot/limb/left/endpoint_state"/>
+    </node>
+    <node if="$(arg rec_depth)"
+          pkg="baxter_data_acquisition" type="bag_server.py"
+          name="depth_bag" ns="depth_bag_service" required="true"
+          respawn="false" output="screen" cwd="node">
+        <param name="~topics" value="/kinect/rgb/image
                                      /kinect/depth/image
                                      /senz3d/rgb/image
                                      /senz3d/depth/image"/>

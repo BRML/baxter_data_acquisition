@@ -62,7 +62,7 @@ class BagServer(object):
             msg = "Start recording on '%s' ..." % self
             rospy.loginfo(msg)
 
-            start_cmd = "rosbag record"
+            start_cmd = "rosbag record -b 256 --chunksize=768"
             if req.outname:
                 start_cmd += ' -O %s' % req.outname
             else:
@@ -84,11 +84,11 @@ class BagServer(object):
             self._running = False
             rospy.loginfo("... stopped.")
         elif req.on and self._running:
-            msg = "Recorder is already running. Do nothing."
+            msg = "'%s' Recorder is already running. Do nothing." % self
             rospy.loginfo(msg)
             resp = True
         elif not req.on and not self._running:
-            msg = "Recorder is not running. Do nothing."
+            msg = "'%s' Recorder is not running. Do nothing." % self
             rospy.loginfo(msg)
             resp = True
         else:

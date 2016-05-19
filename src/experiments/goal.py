@@ -82,6 +82,7 @@ class Experiment(object):
 
         self._limb = baxter_interface.Limb(self._arm)
         if self._joints:
+            self._bag_joint = BagClient('joint_bag_service/bag_service')
             self._rec_joint = JointRecorder(limb=self._arm,
                                             rate=settings.recording_rate,
                                             anomaly_mode='automatic')
@@ -97,12 +98,13 @@ class Experiment(object):
         self._kin = baxter_kinematics(self._arm)
         self._lim = [settings.q_lim(self._arm)[jn] for jn in self._jns]
 
-        self._rec_bag = BagClient()
         if self._images:
             cam = 'head_camera'
             self._camera = baxter_interface.CameraController(cam, self._sim)
+            self._bag_cam = BagClient('cam_bag_service/bag_service')
         #     self._rec_cam = BagClient()
-        # if self._threed:
+        if self._threed:
+            self._bag_depth = BagClient('depth_bag_service/bag_service')
         #     self._rec_senz3d = SenzClient()
         #     self._rec_kinect = KinectClient()
         #     self._rec_flash = FlashClient()
@@ -169,7 +171,9 @@ class Experiment(object):
         rospy.loginfo('Record goal oriented motion data into %s.' % outfile)
         self._head.set_pan(0.0)
         self._limb.move_to_neutral()
-        self._rec_bag.start(outname=outfile)
+        self._bag_cam.start(outname=outfile+'-cam')
+        self._bag_depth.start(outname=outfile+'-depth')
+        self._bag_joint.start(outname=outfile+'-joint')
         rospy.sleep(1.0)
         try:
             for nr in range(self._number):
@@ -202,7 +206,9 @@ class Experiment(object):
         finally:
             self._limb.move_to_neutral()
         rospy.sleep(1.0)
-        self._rec_bag.stop()
+        self._bag_joint.stop()
+        self._bag_depth.stop()
+        self._bag_cam.stop()
         rospy.signal_shutdown('Done with experiment.')
 
     def _one_sample(self, verbose=False):

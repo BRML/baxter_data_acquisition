@@ -4,8 +4,8 @@ from baxter_data_acquisition.srv import Trigger
 
 
 class BagClient(object):
-    def __init__(self):
-        self._service_name = 'bag_service'
+    def __init__(self, service_name='bag_service'):
+        self._service_name = service_name
 
     def start(self, outname):
         """ Start bag recorder hosted on bag recorder server.
