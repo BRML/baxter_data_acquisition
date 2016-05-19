@@ -27,8 +27,6 @@ import rospy
 
 from std_msgs.msg import Float64
 
-from baxter_data_acquisition.srv import Trigger
-
 
 class FlashRecorder(object):
     def __init__(self):
@@ -82,35 +80,3 @@ class FlashRecorder(object):
         rospy.loginfo("'%s' received %d frames in %f s (%f Hz)." % (
             rospy.get_caller_id(), self._count, duration, self._count / duration))
         return True
-
-
-class FlashClient(object):
-    def __init__(self):
-        self._service_name = 'flash_recorder/trigger_service'
-
-    def start(self, outname):
-        """ Start screen flash recorder hosted on Flash recorder server.
-        :param outname: Filename to write the text file to, without the
-        extension.
-        :return: (bool success, string message)
-        """
-        rospy.logdebug("Waiting for flash recorder server.")
-        rospy.wait_for_service(self._service_name)
-        try:
-            trigger = rospy.ServiceProxy(self._service_name, Trigger)
-            resp = trigger(on=True, outname=outname)
-            return resp.success, resp.message
-        except rospy.ServiceException as e:
-            rospy.logerr('Service call failed: %s' % e)
-
-    def stop(self):
-        """ Stop screen flash recorder hosted on Flash recorder server.
-        :return: (bool success, string message)
-        """
-        rospy.wait_for_service(self._service_name)
-        try:
-            trigger = rospy.ServiceProxy(self._service_name, Trigger)
-            resp = trigger(on=False)
-            return resp.success, resp.message
-        except rospy.ServiceException as e:
-            rospy.logerr('Service call failed: %s' % e)
