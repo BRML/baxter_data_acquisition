@@ -124,12 +124,12 @@ class DepthRecorder(object):
             rospy.loginfo("'%s' Unregister subscriber ..." % self)
             self._sub.unregister()
             rospy.loginfo("'%s' ... unregistered subscriber." % self)
-        rospy.loginfo("'%s' Closing binary file ..." % self)
-        self._fp_d.close()
-        rospy.loginfo("'%s' ... closed binary file." % self)
-        rospy.loginfo("'%s' Closing text file ..." % self)
-        self._fp_ts.close()
-        rospy.loginfo("'%s' ... closed text file." % self)
+        # rospy.loginfo("'%s' Closing binary file ..." % self)
+        # self._fp_d.close()
+        # rospy.loginfo("'%s' ... closed binary file." % self)
+        # rospy.loginfo("'%s' Closing text file ..." % self)
+        # self._fp_ts.close()
+        # rospy.loginfo("'%s' ... closed text file." % self)
 
         self._display_performance()
         return self._fp_d.closed or self._fp_ts.closed

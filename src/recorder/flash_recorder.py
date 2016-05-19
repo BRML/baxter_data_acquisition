@@ -66,6 +66,7 @@ class FlashRecorder(object):
     def _add_timestamp(self, ts):
         """ Flash subscriber callback function """
         self._fp.write('%f\n' % ts.data)
+        self._fp.flush()
         self._count += 1
 
     def stop(self):
@@ -76,9 +77,9 @@ class FlashRecorder(object):
             rospy.loginfo("'%s' Unregister subscriber ..." % self)
             self._sub.unregister()
             rospy.loginfo("'%s' ... unregistered subscriber." % self)
-        rospy.loginfo("'%s' Closing text file ..." % self)
-        self._fp.close()
-        rospy.loginfo("'%s' ... closed text file." % self)
+        # rospy.loginfo("'%s' Closing text file ..." % self)
+        # self._fp.close()
+        # rospy.loginfo("'%s' ... closed text file." % self)
 
         self._display_performance()
         return self._fp.closed

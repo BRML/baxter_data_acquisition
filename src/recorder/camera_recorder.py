@@ -119,9 +119,9 @@ class CameraRecorder(object):
         rospy.loginfo("'%s' Closing video file ..." % self)
         self._clip.release()
         rospy.loginfo("'%s' ... closed video file." % self)
-        rospy.loginfo("'%s' Closing text file ..." % self)
-        self._fp.close()
-        rospy.loginfo("'%s' ... closed text file." % self)
+        # rospy.loginfo("'%s' Closing text file ..." % self)
+        # self._fp.close()
+        # rospy.loginfo("'%s' ... closed text file." % self)
 
         self._display_performance()
         return self._clip.isOpened() or self._fp.closed
