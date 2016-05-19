@@ -39,6 +39,13 @@ class Handler(object):
         self._fr = FlashRecorder()
         self._running = False
 
+    def __str__(self):
+        return rospy.get_caller_id()
+
+    def clean_shutdown(self):
+        rospy.loginfo("Exiting %s." % self)
+        return True
+
     def handle_trigger(self, req):
         """ Handler handle for the Flash recorder server.
         Gets a request service message, specified by Trigger.srv, to start or
@@ -49,18 +56,18 @@ class Handler(object):
         :returns: A TriggerResponse(bool success, string message).
         """
         if req.on and not self._running:
-            rospy.loginfo("Starting flash recorder ...")
+            rospy.loginfo("Starting %s ..." % self)
             self._running = True
             resp = self._fr.start(outname=req.outname)
-            msg = "Started flash recorder."
+            msg = "... %s started." % self
         elif not req.on and self._running:
-            rospy.loginfo("Stopping flash recorder ...")
+            rospy.loginfo("Stopping %s ..." % self)
             self._running = False
             resp = self._fr.stop()
-            msg = "Stopped flash recorder."
+            msg = "... %s stopped." % self
         else:
             resp = False
-            msg = "Flash recorder already/not yet running."
+            msg = "%s already/not yet running." % self
         rospy.loginfo(msg)
         return TriggerResponse(success=resp, message=msg)
 
@@ -73,6 +80,9 @@ if __name__ == "__main__":
 
     rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()
+    rospy.on_shutdown(h.clean_shutdown)
+
     s = rospy.Service(service_name, Trigger, h.handle_trigger)
-    rospy.loginfo('Flash recorder ready to get triggered.')
+    rospy.loginfo('%s ready to get triggered.' % h)
+
     rospy.spin()
