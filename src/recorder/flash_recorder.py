@@ -85,5 +85,5 @@ class FlashRecorder(object):
 
     def _display_performance(self):
         """ Log performance information (messages received). """
-        rospy.loginfo("'%s' Received %d messages in %f.2 s." %
+        rospy.loginfo("'%s' Received %d messages in %.2f s." %
                       (self, self._count, rospy.get_time() - self._t_start))
