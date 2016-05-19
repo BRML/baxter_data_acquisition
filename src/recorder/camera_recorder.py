@@ -126,7 +126,7 @@ class CameraRecorder(object):
 
 class CameraClient(object):
     def __init__(self):
-        self._service_name = 'camera_service'
+        self._service_name = 'camera_recorder/trigger_service'
 
     def start(self, outname, fps, imgsize):
         """ Start camera recorder hosted on camera recorder server.

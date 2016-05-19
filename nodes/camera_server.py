@@ -78,7 +78,7 @@ if __name__ == "__main__":
     """ A server for recording time-stamped videos from baxter's head camera.
     A ROS service server hosting a CameraRecorder instance in a ROS node.
     """
-    service_name = 'camera_service'
+    service_name = 'trigger_service'
 
     rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()

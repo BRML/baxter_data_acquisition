@@ -10,13 +10,13 @@
     <!-- launch JointRecorder server node -->
     <node if="$(arg joint)"
           pkg="baxter_data_acquisition" type="joint_server.py"
-          name="joint_recorder_server" required="true"
+          name="recorder_server" ns="joint_recorder" required="true"
           respawn="false" output="screen" cwd="node"/>
 
     <!-- launch CameraRecorder server node -->
     <node if="$(arg camera)"
           pkg="baxter_data_acquisition" type="camera_server.py"
-          name="camera_recorder_server" required="true"
+          name="recorder_server" ns="camera_recorder" required="true"
           respawn="false" output="screen" cwd="node"/>
 
     <!-- launch Kinect Recorder server node -->

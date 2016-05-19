@@ -361,7 +361,7 @@ class JointClient(object):
         :param anomaly_mode: Type of anomaly in the data ['manual',
         'automatic', 'none'].
         """
-        self._service_name = 'joint_service'
+        self._service_name = 'joint_recorder/trigger_service'
 
         # set up JointRecorder instance on server node
         rospy.loginfo("Waiting for joint recorder server.")

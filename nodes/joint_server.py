@@ -133,7 +133,7 @@ def main():
     sensors.
     A ROS service server hosting a JointRecorder instance in a ROS node.
     """
-    service_name = 'joint_service'
+    service_name = 'trigger_service'
 
     rospy.init_node(service_name, log_level=rospy.INFO)
     h = Handler()
