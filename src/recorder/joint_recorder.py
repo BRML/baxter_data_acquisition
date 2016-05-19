@@ -97,6 +97,18 @@ class JointRecorder(object):
         self._sub_efft_des = None
         self._sub_pose = None
         self._sub_pose_label = None
+        self._count = {'acceleration measured': 0,
+                       'anomaly commanded': 0,
+                       'configuration commanded': 0,
+                       'configuration desired': 0,
+                       'configuration measured': 0,
+                       'effort commanded': 0,
+                       'effort generated': 0,
+                       'effort desired': 0,
+                       'effort measured': 0,
+                       'pose measured': 0,
+                       'pose label': 0}
+        self._start = None
 
     def start(self, outfile):
         """ Start joint data recording.
@@ -148,6 +160,10 @@ class JointRecorder(object):
                                                 self._cb_pose_label,
                                                 queue_size=1)
 
+        for k in self._count:
+            self._count[k] = 0
+        self._start = rospy.get_time()
+
     def stop(self):
         """ Stop joint data recording. """
         if self._sub_acc is not None:
@@ -180,107 +196,123 @@ class JointRecorder(object):
         if self._sub_pose_label is not None:
             rospy.loginfo('unregistering pose label ...')
             self._sub_pose_label.unregister()
+        duration = rospy.get_time() - self._start
+        for k in self._count:
+            rospy.loginfo("'%s' received %d %s-frames in %f s (%f Hz)." % (
+                rospy.get_caller_id(), self._count[k], k, duration, self._count[k]/duration))
 
     def write_sample(self):
         """ Append data of one sample to the .hdf5 joint data file. """
-        if not os.path.exists(self._filename):
-            mode = 'w'
-        else:
-            mode = 'a'
-        with h5py.File(self._filename, mode) as fp:
-            idx = len(fp)
-            g = fp.require_group('%i' % idx)
-            for modality in self._data:
-                if modality == 'anomaly':
-                    if len(self._data['anomaly']['commanded']) == 0:
-                        # no anomaly in this sample
-                        continue
-                elif modality == 'acceleration':
-                    if len(self._data['acceleration']['measured']) == 0:
-                        # no acceleration in this sample (simulation)
-                        continue
-                gm = g.require_group(modality)
-                for field in self._data[modality]:
-                    data = np.asarray(self._data[modality][field])
-                    if data.shape == (0,):
-                        continue
-                    gf = gm.require_dataset(field, shape=data.shape,
-                                            dtype=data.dtype, data=data)
-                    if modality == 'pose' and field == 'label':
-                        gf.attrs.create('Header', data=['time', 'index'])
-                    else:
-                        gf.attrs.create('Header', data=self._header[modality])
+        pass
+        # if not os.path.exists(self._filename):
+        #     mode = 'w'
+        # else:
+        #     mode = 'a'
+        # with h5py.File(self._filename, mode) as fp:
+        #     idx = len(fp)
+        #     g = fp.require_group('%i' % idx)
+        #     for modality in self._data:
+        #         if modality == 'anomaly':
+        #             if len(self._data['anomaly']['commanded']) == 0:
+        #                 # no anomaly in this sample
+        #                 continue
+        #         elif modality == 'acceleration':
+        #             if len(self._data['acceleration']['measured']) == 0:
+        #                 # no acceleration in this sample (simulation)
+        #                 continue
+        #         gm = g.require_group(modality)
+        #         for field in self._data[modality]:
+        #             data = np.asarray(self._data[modality][field])
+        #             if data.shape == (0,):
+        #                 continue
+        #             gf = gm.require_dataset(field, shape=data.shape,
+        #                                     dtype=data.dtype, data=data)
+        #             if modality == 'pose' and field == 'label':
+        #                 gf.attrs.create('Header', data=['time', 'index'])
+        #             else:
+        #                 gf.attrs.create('Header', data=self._header[modality])
         # print 'Done writing sample data to file.'
 
     def _cb_acc(self, data):
-        acc = data.linear_acceleration
-        self._data['acceleration']['measured'].append([rospy.get_time(),
-                                                       acc.x, acc.y, acc.z])
+        self._count['acceleration measured'] += 1
+        # acc = data.linear_acceleration
+        # self._data['acceleration']['measured'].append([rospy.get_time(),
+        #                                                acc.x, acc.y, acc.z])
         self._rate.sleep()
 
     def _cb_anom(self, data):
-        anom = list(data.data)
-        self._data['anomaly']['commanded'].append([rospy.get_time()] + anom)
+        self._count['anomaly commanded'] += 1
+        # anom = list(data.data)
+        # self._data['anomaly']['commanded'].append([rospy.get_time()] + anom)
 
     def _cb_cfg_comm(self, data):
-        cfg = list(data.command)
-        self._data['configuration']['commanded'].append(
-                [rospy.get_time()] + cfg)
+        self._count['configuration commanded'] += 1
+        # cfg = list(data.command)
+        # self._data['configuration']['commanded'].append(
+        #         [rospy.get_time()] + cfg)
         self._rate.sleep()
 
     def _cb_cfg_des(self, data):
-        cfg = list(data.command)
-        self._data['configuration']['desired'].append([rospy.get_time()] + cfg)
+        self._count['configuration desired'] += 1
+        # cfg = list(data.command)
+        # self._data['configuration']['desired'].append([rospy.get_time()] + cfg)
 
     def _cb_state(self, data):
-        time = rospy.get_time()
-        name = list(data.name)
-        pos = list(data.position)
-        effort = list(data.effort)
-        try:
-            p = [pos[name.index(j)] for j in self._header['configuration'][1:]]
-            self._data['configuration']['measured'].append([time] + p)
-            e = [effort[name.index(j)] for j in self._header['effort'][1:]]
-            self._data['effort']['measured'].append([time] + e)
-        except ValueError:
-            # there seems to be a BUG: every few callbacks name is not joints
-            # but ['r_gripper_l_finger_joint'] with corresponding pos and efft
-            pass
+        self._count['configuration measured'] += 1
+        self._count['effort measured'] += 1
+        # time = rospy.get_time()
+        # name = list(data.name)
+        # pos = list(data.position)
+        # effort = list(data.effort)
+        # try:
+        #     p = [pos[name.index(j)] for j in self._header['configuration'][1:]]
+        #     self._data['configuration']['measured'].append([time] + p)
+        #     e = [effort[name.index(j)] for j in self._header['effort'][1:]]
+        #     self._data['effort']['measured'].append([time] + e)
+        # except ValueError:
+        #     # there seems to be a BUG: every few callbacks name is not joints
+        #     # but ['r_gripper_l_finger_joint'] with corresponding pos and efft
+        #     pass
         self._rate.sleep()
 
     def _cb_efft_comm(self, data):
-        name = list(data.names)
-        effort = list(data.command)
-        try:
-            e = [effort[name.index(j)] for j in self._header['effort'][1:]]
-            self._data['effort']['commanded'].append([rospy.get_time()] + e)
-        except ValueError:
-            print "ERROR-cb_efft_comm %i-Key does not exist." % data.header.seq
+        self._count['effort commanded'] += 1
+        # name = list(data.names)
+        # effort = list(data.command)
+        # try:
+        #     e = [effort[name.index(j)] for j in self._header['effort'][1:]]
+        #     self._data['effort']['commanded'].append([rospy.get_time()] + e)
+        # except ValueError:
+        #     print "ERROR-cb_efft_comm %i-Key does not exist." % data.header.seq
         self._rate.sleep()
 
     def _cb_efft_gen(self, data):
-        effort = list(data.command)
-        self._data['effort']['generated'].append([rospy.get_time()] + effort)
+        self._count['effort generated'] += 1
+        # effort = list(data.command)
+        # self._data['effort']['generated'].append([rospy.get_time()] + effort)
         self._rate.sleep()
 
     def _cb_efft_des(self, data):
-        effort = list(data.command)
-        self._data['effort']['desired'].append([rospy.get_time()] + effort)
+        self._count['effort desired'] += 1
+        # effort = list(data.command)
+        # self._data['effort']['desired'].append([rospy.get_time()] + effort)
         self._rate.sleep()
 
     def _cb_pose(self, data):
-        pose = [data.pose.position.x,
-                data.pose.position.y,
-                data.pose.position.z,
-                data.pose.orientation.x,
-                data.pose.orientation.y,
-                data.pose.orientation.z,
-                data.pose.orientation.w]
-        self._data['pose']['measured'].append([rospy.get_time()] + pose)
+        self._count['pose measured'] += 1
+        # pose = [data.pose.position.x,
+        #         data.pose.position.y,
+        #         data.pose.position.z,
+        #         data.pose.orientation.x,
+        #         data.pose.orientation.y,
+        #         data.pose.orientation.z,
+        #         data.pose.orientation.w]
+        # self._data['pose']['measured'].append([rospy.get_time()] + pose)
         self._rate.sleep()
 
     def _cb_pose_label(self, data):
-        self._data['pose']['label'].append([rospy.get_time(), data.data])
+        # self._data['pose']['label'].append([rospy.get_time(), data.data])
+        self._count['pose label'] += 1
         self._rate.sleep()
 
     def get_header_acc(self):

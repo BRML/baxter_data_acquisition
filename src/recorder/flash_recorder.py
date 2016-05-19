@@ -37,6 +37,8 @@ class FlashRecorder(object):
         """
         self._sub = None
         self._fp = None
+        self._count = 0
+        self._start = None
 
     def start(self, outname):
         """ Set up the flash recorder with the parameters for the recording
@@ -45,20 +47,24 @@ class FlashRecorder(object):
         extension.
         :return: Whether the text file was opened successfully.
         """
-        try:
-            self._fp = open(outname + '.txt', 'w')
-        except IOError:
-            rospy.logfatal("start - Problem with opening text file.")
-            raise
-        self._fp.write('# timestamps [s]\n')
+        # try:
+        #     self._fp = open(outname + '.txt', 'w')
+        # except IOError:
+        #     rospy.logfatal("start - Problem with opening text file.")
+        #     raise
+        # self._fp.write('# timestamps [s]\n')
 
         self._sub = rospy.Subscriber('/data/head/flash_white',
                                      Float64, callback=self._add_timestamp)
-        return not self._fp.closed
+        # return not self._fp.closed
+        self._count = 0
+        self._start = rospy.get_time()
+        return True
 
     def _add_timestamp(self, ts):
         """ Flash subscriber callback function """
-        self._fp.write('%f\n' % ts.data)
+        # self._fp.write('%f\n' % ts.data)
+        self._count += 1
 
     def stop(self):
         """ Stop recording head screen flash time stamps.
@@ -68,10 +74,14 @@ class FlashRecorder(object):
             rospy.loginfo('unregistering ...')
             self._sub.unregister()
             rospy.loginfo('unregistered')
-        rospy.loginfo('closing text file ...')
-        self._fp.close()
-        rospy.loginfo('closed')
-        return self._fp.closed
+        # rospy.loginfo('closing text file ...')
+        # self._fp.close()
+        # rospy.loginfo('closed')
+        # return self._fp.closed
+        duration = rospy.get_time() - self._start
+        rospy.loginfo("'%s' received %d frames in %f s (%f Hz)." % (
+            rospy.get_caller_id(), self._count, duration, self._count / duration))
+        return True
 
 
 class FlashClient(object):

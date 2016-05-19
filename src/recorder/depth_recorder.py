@@ -46,6 +46,8 @@ class DepthRecorder(object):
         self._sub = None
         self._camera = ""
         self.camera = '/cameras/kinect/depth/image_raw'
+        self._count = 0
+        self._start = None
 
     def start(self, outname):
         """ Set up the depth recorder with the parameters for the recording
@@ -54,48 +56,52 @@ class DepthRecorder(object):
         without the extension.
         :return: Whether the binary- and text file were opened successfully.
         """
-        try:
-            self._fp_ts = open(outname + '.txt', 'w')
-        except IOError:
-            rospy.logfatal("start - Problem with opening text file.")
-            raise
-        self._fp_ts.write('# timestamps [s]\n')
-
-        try:
-            self._fp_d = open(outname + '.bin', 'wb')
-        except IOError:
-            rospy.logfatal("start - Problem with opening binary file.")
-            raise
+        # try:
+        #     self._fp_ts = open(outname + '.txt', 'w')
+        # except IOError:
+        #     rospy.logfatal("start - Problem with opening text file.")
+        #     raise
+        # self._fp_ts.write('# timestamps [s]\n')
+        #
+        # try:
+        #     self._fp_d = open(outname + '.bin', 'wb')
+        # except IOError:
+        #     rospy.logfatal("start - Problem with opening binary file.")
+        #     raise
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
-        return not (self._fp_d.closed and self._fp_ts.closed)
+        # return not (self._fp_d.closed and self._fp_ts.closed)
+        self._count = 0
+        self._start = rospy.get_time()
+        return True
 
     def _add_image(self, imgmsg):
         """ Camera subscriber callback function """
-        ts = rospy.get_time()
-        self._fp_ts.write('%f\n' % ts)
-
-        try:
-            img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
-        except cv_bridge.CvBridgeError:
-            rospy.logfatal('add_image - Problem with ROS image message conversion.')
-            raise
-
-        # Scale float32 image to uint16 image.
-        # '{min, max}_cutoff are the minimum and maximum range of the depth
-        # sensor of the Kinect V2.
-        min_cutoff = 0.5
-        max_cutoff = 4.5
-        img_uint16 = 65535*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
-        img_uint16 = img_uint16.astype(np.uint16, copy=False)
-
-        # compress image with snappy
-        img_comp = snappy.compress(img_uint16)
-        # write number of bytes of compressed image
-        nr_bytes = struct.pack('<L', len(img_comp))
-        self._fp_d.write(nr_bytes)
-        # write compressed image
-        self._fp_d.write(img_comp)
+        # ts = rospy.get_time()
+        # self._fp_ts.write('%f\n' % ts)
+        #
+        # try:
+        #     img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
+        # except cv_bridge.CvBridgeError:
+        #     rospy.logfatal('add_image - Problem with ROS image message conversion.')
+        #     raise
+        #
+        # # Scale float32 image to uint16 image.
+        # # '{min, max}_cutoff are the minimum and maximum range of the depth
+        # # sensor of the Kinect V2.
+        # min_cutoff = 0.5
+        # max_cutoff = 4.5
+        # img_uint16 = 65535*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
+        # img_uint16 = img_uint16.astype(np.uint16, copy=False)
+        #
+        # # compress image with snappy
+        # img_comp = snappy.compress(img_uint16)
+        # # write number of bytes of compressed image
+        # nr_bytes = struct.pack('<L', len(img_comp))
+        # self._fp_d.write(nr_bytes)
+        # # write compressed image
+        # self._fp_d.write(img_comp)
+        self._count += 1
 
     def stop(self):
         """ Stop recording data from the depth sensor.
@@ -105,12 +111,16 @@ class DepthRecorder(object):
             rospy.loginfo('unregistering ...')
             self._sub.unregister()
             rospy.loginfo('unregistered')
-        rospy.loginfo('closing binary file ...')
-        self._fp_d.close()
-        rospy.loginfo('closed. closing text file ...')
-        self._fp_ts.close()
-        rospy.loginfo('closed.')
-        return self._fp_d.closed or self._fp_ts.closed
+        # rospy.loginfo('closing binary file ...')
+        # self._fp_d.close()
+        # rospy.loginfo('closed. closing text file ...')
+        # self._fp_ts.close()
+        # rospy.loginfo('closed.')
+        # return self._fp_d.closed or self._fp_ts.closed
+        duration = rospy.get_time() - self._start
+        rospy.loginfo("'%s' received %d frames in %f s (%f Hz)." % (
+            rospy.get_caller_id(), self._count, duration, self._count / duration))
+        return True
 
     @property
     def camera(self):

@@ -45,6 +45,8 @@ class CameraRecorder(object):
 
         self._camera = ""
         self.camera = '/cameras/head_camera/image'
+        self._count = 0
+        self._start = None
 
     def start(self, outname, fps, imgsize):
         """ Set up the camera recorder with the parameters for the recording
@@ -62,35 +64,36 @@ class CameraRecorder(object):
         #     rospy.logfatal("start - Problem with opening text file.")
         #     raise
         # self._fp.write('# timestamps [s]\n')
-
-        self._clip = cv2.VideoWriter(outname + '.avi',
-                                     fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
-                                     fps=fps,
-                                     frameSize=imgsize,
-                                     isColor=True)
-        if not self._clip.isOpened():
-            rospy.logfatal("start - Problem with opening VideoWriter.")
-            raise IOError('Problem with opening VideoWriter!')
+        self._count = 0
+        # self._clip = cv2.VideoWriter(outname + '.avi',
+        #                              fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
+        #                              fps=fps,
+        #                              frameSize=imgsize,
+        #                              isColor=True)
+        # if not self._clip.isOpened():
+        #     rospy.logfatal("start - Problem with opening VideoWriter.")
+        #     raise IOError('Problem with opening VideoWriter!')
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
-        return self._clip.isOpened()  # and not self._fp.closed
+        self._start = rospy.get_time()
+        return True  # self._clip.isOpened()  # and not self._fp.closed
 
     def _add_image(self, imgmsg):
         """ Camera subscriber callback function """
         # ts = rospy.get_time()
         # self._fp.write('%f\n' % ts)
         # self._fp.flush()
-
-        try:
-            img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg, 'bgr8')
-        except cv_bridge.CvBridgeError:
-            rospy.logfatal('add_image - Problem with ROS image message conversion.')
-            raise
-        try:
-            self._clip.write(img)
-        except Exception:
-            rospy.logfatal('add_image - Recording frame failed.')
-            raise
+        self._count += 1
+        # try:
+        #     img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg, 'bgr8')
+        # except cv_bridge.CvBridgeError:
+        #     rospy.logfatal('add_image - Problem with ROS image message conversion.')
+        #     raise
+        # try:
+        #     self._clip.write(img)
+        # except Exception:
+        #     rospy.logfatal('add_image - Recording frame failed.')
+        #     raise
 
     def stop(self):
         """ Stop recording data from the head camera.
@@ -100,12 +103,14 @@ class CameraRecorder(object):
             rospy.loginfo('unregistering ...')
             self._sub.unregister()
             rospy.loginfo('unregistered')
-        rospy.loginfo('releasing video clip ...')
-        self._clip.release()
-        rospy.loginfo('released.')  # closing text file ...')
+        # rospy.loginfo('releasing video clip ...')
+        # self._clip.release()
+        # rospy.loginfo('released.')  # closing text file ...')
         # self._fp.close()
         # rospy.loginfo('closed')
-        return self._clip.isOpened()  # or self._fp.closed
+        duration = rospy.get_time() - self._start
+        rospy.loginfo("'%s' received %d frames in %f s (%f Hz)." % (rospy.get_caller_id(), self._count, duration, self._count/duration))
+        return True  # self._clip.isOpened()  # or self._fp.closed
 
     @property
     def camera(self):
