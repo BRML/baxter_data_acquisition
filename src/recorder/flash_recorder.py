@@ -35,33 +35,37 @@ class FlashRecorder(object):
         """
         self._sub = None
         self._fp = None
+
         self._count = 0
-        self._start = None
+        self._t_start = None
+
+    def __str__(self):
+        return rospy.get_caller_id()
 
     def start(self, outname):
         """ Set up the flash recorder with the parameters for the recording
         and subscribe to the callback function of the screen flash subscriber.
         :param outname: Filename to write the text file to, without the
-        extension.
+            extension.
         :return: Whether the text file was opened successfully.
         """
-        # try:
-        #     self._fp = open(outname + '.txt', 'w')
-        # except IOError:
-        #     rospy.logfatal("start - Problem with opening text file.")
-        #     raise
-        # self._fp.write('# timestamps [s]\n')
+        self._count = 0
+        self._t_start = rospy.get_time()
+
+        try:
+            self._fp = open(outname + '.txt', 'w')
+        except IOError as e:
+            rospy.logfatal("'%s' Failed to open text file!" % self)
+            raise e
+        self._fp.write('# timestamps [s]\n')
 
         self._sub = rospy.Subscriber('/data/head/flash_white',
                                      Float64, callback=self._add_timestamp)
-        # return not self._fp.closed
-        self._count = 0
-        self._start = rospy.get_time()
-        return True
+        return not self._fp.closed
 
     def _add_timestamp(self, ts):
         """ Flash subscriber callback function """
-        # self._fp.write('%f\n' % ts.data)
+        self._fp.write('%f\n' % ts.data)
         self._count += 1
 
     def stop(self):
@@ -69,14 +73,17 @@ class FlashRecorder(object):
         :return: Whether the text file is open.
         """
         if self._sub is not None:
-            rospy.loginfo('unregistering ...')
+            rospy.loginfo("'%s' Unregister subscriber ..." % self)
             self._sub.unregister()
-            rospy.loginfo('unregistered')
-        # rospy.loginfo('closing text file ...')
-        # self._fp.close()
-        # rospy.loginfo('closed')
-        # return self._fp.closed
-        duration = rospy.get_time() - self._start
-        rospy.loginfo("'%s' received %d frames in %f s (%f Hz)." % (
-            rospy.get_caller_id(), self._count, duration, self._count / duration))
-        return True
+            rospy.loginfo("'%s' ... unregistered subscriber." % self)
+        rospy.loginfo("'%s' Closing text file ..." % self)
+        self._fp.close()
+        rospy.loginfo("'%s' ... closed text file." % self)
+
+        self._display_performance()
+        return self._fp.closed
+
+    def _display_performance(self):
+        """ Log performance information (messages received). """
+        rospy.loginfo("'%s' Received %d messages in %f.2 s." %
+                      (self, self._count, rospy.get_time() - self._t_start))
