@@ -41,13 +41,21 @@ class DepthRecorder(object):
         compressed into a .bin binary file and time stamps for each image
         frame into an accompanying .txt file.
         """
+        self._sub = None
         self._fp_d = None
         self._fp_ts = None
-        self._sub = None
+
+        # TODO: use property properly
+        # http://stackoverflow.com/questions/17330160/how-does-the-property-decorator-work
+        # http://stackoverflow.com/questions/6618002/python-property-versus-getters-and-setters
         self._camera = ""
         self.camera = '/cameras/kinect/depth/image_raw'
+
         self._count = 0
-        self._start = None
+        self._t_start = None
+
+    def __str__(self):
+        return rospy.get_caller_id()
 
     def start(self, outname):
         """ Set up the depth recorder with the parameters for the recording
@@ -56,71 +64,81 @@ class DepthRecorder(object):
         without the extension.
         :return: Whether the binary- and text file were opened successfully.
         """
-        # try:
-        #     self._fp_ts = open(outname + '.txt', 'w')
-        # except IOError:
-        #     rospy.logfatal("start - Problem with opening text file.")
-        #     raise
-        # self._fp_ts.write('# timestamps [s]\n')
-        #
-        # try:
-        #     self._fp_d = open(outname + '.bin', 'wb')
-        # except IOError:
-        #     rospy.logfatal("start - Problem with opening binary file.")
-        #     raise
+        self._count = 0
+        self._t_start = rospy.get_time()
+
+        try:
+            self._fp_ts = open(outname + '.txt', 'w')
+        except IOError as e:
+            rospy.logfatal("'%s' Failed to open text file!" % self)
+            raise e
+        self._fp_ts.write('# timestamps [s]\n')
+
+        try:
+            self._fp_d = open(outname + '.bin', 'wb')
+        except IOError as e:
+            rospy.logfatal("'%s' Failed to open binary file!" % self)
+            raise e
+
+        # TODO: make sure to use the right camera property here
         self._sub = rospy.Subscriber(self.camera,
                                      Image, callback=self._add_image)
-        # return not (self._fp_d.closed and self._fp_ts.closed)
-        self._count = 0
-        self._start = rospy.get_time()
-        return True
+        return not (self._fp_d.closed and self._fp_ts.closed)
 
     def _add_image(self, imgmsg):
         """ Camera subscriber callback function """
-        # ts = rospy.get_time()
-        # self._fp_ts.write('%f\n' % ts)
-        #
-        # try:
-        #     img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
-        # except cv_bridge.CvBridgeError:
-        #     rospy.logfatal('add_image - Problem with ROS image message conversion.')
-        #     raise
-        #
-        # # Scale float32 image to uint16 image.
-        # # '{min, max}_cutoff are the minimum and maximum range of the depth
-        # # sensor of the Kinect V2.
-        # min_cutoff = 0.5
-        # max_cutoff = 4.5
-        # img_uint16 = 65535*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
-        # img_uint16 = img_uint16.astype(np.uint16, copy=False)
-        #
-        # # compress image with snappy
-        # img_comp = snappy.compress(img_uint16)
-        # # write number of bytes of compressed image
-        # nr_bytes = struct.pack('<L', len(img_comp))
-        # self._fp_d.write(nr_bytes)
-        # # write compressed image
-        # self._fp_d.write(img_comp)
+        ts = rospy.get_time()
+        self._fp_ts.write('%f\n' % ts)
+        self._fp_ts.flush()
+
+        try:
+            img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
+        except cv_bridge.CvBridgeError as e:
+            rospy.logfatal("'%s' Failed to convert ROS image message!" % self)
+            raise e
+
+        # Scale float32 image to uint16 image.
+        # '{min, max}_cutoff are the minimum and maximum range of the depth
+        # sensor of the Kinect V2.
+        min_cutoff = 0.5
+        max_cutoff = 4.5
+        img_uint16 = 65535*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
+        img_uint16 = img_uint16.astype(np.uint16, copy=False)
+
+        # compress image with snappy
+        img_comp = snappy.compress(img_uint16)
+        # write number of bytes of compressed image
+        nr_bytes = struct.pack('<L', len(img_comp))
+        self._fp_d.write(nr_bytes)
+        # write compressed image
+        self._fp_d.write(img_comp)
+        self._fp_d.flush()
         self._count += 1
 
     def stop(self):
         """ Stop recording data from the depth sensor.
         :return: Whether the binary- and text file are open.
         """
+        # TODO: is there a way to process the remaining subscriber queue before closing it?
         if self._sub is not None:
-            rospy.loginfo('unregistering ...')
+            rospy.loginfo("'%s' Unregister subscriber ..." % self)
             self._sub.unregister()
-            rospy.loginfo('unregistered')
-        # rospy.loginfo('closing binary file ...')
-        # self._fp_d.close()
-        # rospy.loginfo('closed. closing text file ...')
-        # self._fp_ts.close()
-        # rospy.loginfo('closed.')
-        # return self._fp_d.closed or self._fp_ts.closed
-        duration = rospy.get_time() - self._start
-        rospy.loginfo("'%s' received %d frames in %f s (%f Hz)." % (
-            rospy.get_caller_id(), self._count, duration, self._count / duration))
-        return True
+            rospy.loginfo("'%s' ... unregistered subscriber." % self)
+        rospy.loginfo("'%s' Closing binary file ..." % self)
+        self._fp_d.close()
+        rospy.loginfo("'%s' ... closed binary file." % self)
+        rospy.loginfo("'%s' Closing text file ..." % self)
+        self._fp_ts.close()
+        rospy.loginfo("'%s' ... closed text file." % self)
+
+        self._display_performance()
+        return self._fp_d.closed or self._fp_ts.closed
+
+    def _display_performance(self):
+        """ Log performance information (messages received). """
+        duration = rospy.get_time() - self._t_start
+        rospy.loginfo("'%s' Received %d messages in %.2f s (%.2f Hz)." %
+                      (self, self._count, duration, self._count/duration))
 
     @property
     def camera(self):
