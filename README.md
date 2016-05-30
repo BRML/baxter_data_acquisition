@@ -84,7 +84,7 @@ directory.
 ```bash
 $ cd ~/ros_baxter_daq_ws/src
 $ wstool init .
-$ wstool merge https://gist.githubusercontent.com/lude-ma/4de2ab1e0d4f632fba1a75d901db8aba/raw/a23de15bd86c5ffff49f0fafcccb3703bde9ddd3/baxter_daq.rosinstall
+$ wstool merge https://gist.githubusercontent.com/lude-ma/4de2ab1e0d4f632fba1a75d901db8aba/raw/671eedbac5bb868c1907abf5bcade0d44bea712d/baxter_daq.rosinstall
 $ wstool update
 $ source /opt/ros/indigo/setup.bash
 $ cd ~/ros_baxter_daq_ws
