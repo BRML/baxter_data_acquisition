@@ -137,10 +137,10 @@ class Experiment(object):
             self._pub_anom = rospy.Publisher(ns + '/anomaly',
                                              Float64MultiArray, queue_size=10)
 
-        print "\nGetting robot state ... "
+        rospy.loginfo("Getting robot state ...")
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
         self._init_state = self._rs.state().enabled
-        print "Enabling robot... "
+        rospy.loginfo("Enabling robot ...")
         self._rs.enable()
 
         self._limb.set_joint_position_speed(0.3)
@@ -159,12 +159,12 @@ class Experiment(object):
         """ Clean shutdown of the robot.
         :return: True on completion
         """
-        print "\nExiting joint position anomaly daq ..."
+        rospy.loginfo("Exiting joint position anomaly daq ...")
         self._limb.set_joint_position_speed(0.3)
         self._pub_rate.publish(100)
         self._limb.move_to_neutral()
         if not self._init_state:
-            print "Disabling robot..."
+            rospy.loginfo("Disabling robot ...")
             self._rs.disable()
         return True
 
@@ -179,16 +179,16 @@ class Experiment(object):
         ]
         for thread in threads:
             thread.start()
-
-        print '\nRecord data %s anomalies into %s.' % \
-              ('with' if self._anomalies else 'without', outfile)
+        rospy.loginfo("Record data %s anomalies into '%s'." %
+                      ('with' if self._anomalies else 'without', outfile))
         self._head.set_pan(0.0)
         self._limb.move_to_neutral()
         try:
             for nr in range(self._number):
                 if rospy.is_shutdown():
                     break
-                print 'Recording sample %i of %d.' % (nr + 1, self._number)
+                rospy.loginfo('Recording sample %i of %d.' %
+                              (nr + 1, self._number))
 
                 self._rec_joint.start(outfile)
                 if self._images:
@@ -302,8 +302,8 @@ class Experiment(object):
 
         """ Trajectory execution """
         if err == 0:
-            print ("Planned trajectory is %i-dimensional and %i steps long." %
-                   (steps.shape[1], steps.shape[0]))
+            rospy.loginfo("Planned trajectory is %i-dimensional and %i steps long." %
+                          (steps.shape[1], steps.shape[0]))
 
             if anomaly_pars is not None:
                 """ Set up anomalies """
@@ -339,7 +339,7 @@ class Experiment(object):
                     if count >= anomaly_start and not started:
                         started = True
                         anomaly_start = count
-                        print " Inducing anomaly on joint", joint
+                        rospy.loginfo(" Inducing anomaly on joint %s." % joint)
                         kp_mod = kpid[joint][0]*pm
                         ki_mod = kpid[joint][1]*im
                         kd_mod = kpid[joint][2]*dm
@@ -368,9 +368,9 @@ class Experiment(object):
                 t_elapsed = rospy.get_time()-t_start
                 count = int(np.floor(t_elapsed*settings.interpolator_rate))
             if count >= steps.shape[0]:
-                print " Arrived at desired configuration."
+                rospy.loginfo(" Arrived at desired configuration.")
             if t_elapsed >= timeout:
-                print " Motion timed out."
+                rospy.loginfo(" Motion timed out.")
             return True
         return False
 
@@ -379,18 +379,19 @@ class Experiment(object):
         :return: Indices of 10 selected configurations from the list of
         configurations.
         """
+        infostr = ""
         if self._experiment == 'randomized':
-            print "Randomly selecting 10 poses from workspace:",
+            infostr += "Randomly selecting 10 poses from workspace:"
             idxs = np.arange(len(self._configs))
             np.random.shuffle(idxs)
             idxs = idxs[:10]
         elif self._experiment == 'fixed':
-            print "Selecting 10 poses from workspace:",
+            infostr += "Selecting 10 poses from workspace:"
             idxs = [50, 47, 26, 27, 9, 61, 13, 55, 15, 37]
         else:
             raise ValueError("'%s' experiment is not implemented!" %
                              self._experiment)
         for idx in idxs:
-            print idx,
-        print ''
+            infostr += " %d" % idx
+        rospy.loginfo(infostr)
         return idxs
