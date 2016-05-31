@@ -50,6 +50,8 @@ from recorder import (
     RecorderClient
 )
 
+# TODO need two joint_server nodes running for this experiment!
+
 
 class Experiment(object):
     def __init__(self, limb, experiment, number, threed):
@@ -138,6 +140,8 @@ class Experiment(object):
 
         print '\nRecord handshake data into %s.' % outfile
         self._head.set_pan(0.0)
+        # Sleep to prevent 'switch controller stop and start list' FATAL error
+        rospy.sleep(0.1)
         self._limb_robot.move_to_neutral()
         if (self._experiment == 'r-r' or
                 (self._experiment == 'r-h' and mode == 'robot')):
