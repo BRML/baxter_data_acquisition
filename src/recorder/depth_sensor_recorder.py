@@ -41,7 +41,7 @@ class DepthSensorRecorder(object):
         :param rgb_fps: The depth sensor rgb frames per second [Hz].
         """
         self._rec_rgb = CameraRecorder()
-        self._rec_rgb.camera = rgb_image_topic
+        self._rec_rgb.topic = rgb_image_topic
         if isinstance(rgb_size, tuple) and len(rgb_size) == 2:
             self._rgb_size = rgb_size
         else:
@@ -49,7 +49,7 @@ class DepthSensorRecorder(object):
         self._rgb_fps = rgb_fps
 
         self._rec_depth = DepthRecorder()
-        self._rec_depth.camera = depth_image_topic
+        self._rec_depth.topic = depth_image_topic
 
     def start(self, outname):
         """ Set up the the depth sensor recorder and record both RGB- and

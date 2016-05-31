@@ -42,12 +42,7 @@ class CameraRecorder(object):
         self._clip = None
         self._sub = None
         self._fp = None
-
-        # TODO: use property properly
-        # http://stackoverflow.com/questions/17330160/how-does-the-property-decorator-work
-        # http://stackoverflow.com/questions/6618002/python-property-versus-getters-and-setters
-        self._camera = ""
-        self.camera = '/cameras/head_camera/image'
+        self._topic = '/cameras/head_camera/image'
 
         self._count = 0
         self._t_start = None
@@ -84,8 +79,7 @@ class CameraRecorder(object):
             rospy.logfatal("'%s' Failed to open videoWriter instance!" % self)
             raise IOError("'%s' Failed to open videoWriter instance!" % self)
 
-        # TODO: make sure to use the right camera property here
-        self._sub = rospy.Subscriber(self.camera,
+        self._sub = rospy.Subscriber(self._topic,
                                      Image, callback=self._add_image,
                                      queue_size=30)
         return self._clip.isOpened() and not self._fp.closed
@@ -134,15 +128,19 @@ class CameraRecorder(object):
                       (self, self._count, duration, self._count/duration))
 
     @property
-    def camera(self):
-        """ String identifying the camera to record images from.
-        :return: Camera name.
-        """
-        return self._camera
+    def topic(self):
+        """ Get the camera topic to record images from. """
+        return self._topic
 
-    @camera.setter
-    def camera(self, camera):
-        self._camera = camera
+    @topic.setter
+    def topic(self, topic_name):
+        """ Set the camera topic to record images from. """
+        self._topic = topic_name
+
+    @topic.deleter
+    def topic(self):
+        """ Delete the camera topic to record images from. """
+        del self._topic
 
 
 class CameraClient(object):

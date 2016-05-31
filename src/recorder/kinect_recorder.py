@@ -36,10 +36,10 @@ class KinectRecorder(object):
         :return:
         """
         self._rec_rgb = CameraRecorder()
-        self._rec_rgb.camera = '/kinect/rgb/image'
+        self._rec_rgb.topic = '/kinect/rgb/image'
 
         self._rec_depth = DepthRecorder()
-        self._rec_depth.camera = '/kinect/depth/image'
+        self._rec_depth.topic = '/kinect/depth/image'
 
     def start(self, outname):
         """ Set up the Kinect recorder and record both RGB- and depth data.

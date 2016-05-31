@@ -36,10 +36,10 @@ class SenzRecorder(object):
         :return:
         """
         self._rec_rgb = CameraRecorder()
-        self._rec_rgb.camera = '/senz3d/rgb/image'
+        self._rec_rgb.topic = '/senz3d/rgb/image'
 
         self._rec_depth = DepthRecorder()
-        self._rec_depth.camera = '/senz3d/depth/image'
+        self._rec_depth.topic = '/senz3d/depth/image'
 
     def start(self, outname):
         """ Set up the Senz3d recorder and record both RGB- and depth data.

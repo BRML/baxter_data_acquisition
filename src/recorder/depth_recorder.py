@@ -44,12 +44,7 @@ class DepthRecorder(object):
         self._sub = None
         self._fp_d = None
         self._fp_ts = None
-
-        # TODO: use property properly
-        # http://stackoverflow.com/questions/17330160/how-does-the-property-decorator-work
-        # http://stackoverflow.com/questions/6618002/python-property-versus-getters-and-setters
-        self._camera = ""
-        self.camera = '/cameras/kinect/depth/image_raw'
+        self._topic = '/cameras/kinect/depth/image_raw'
 
         self._count = 0
         self._t_start = None
@@ -80,8 +75,7 @@ class DepthRecorder(object):
             rospy.logfatal("'%s' Failed to open binary file!" % self)
             raise e
 
-        # TODO: make sure to use the right camera property here
-        self._sub = rospy.Subscriber(self.camera,
+        self._sub = rospy.Subscriber(self._topic,
                                      Image, callback=self._add_image,
                                      queue_size=30)
         return not (self._fp_d.closed and self._fp_ts.closed)
@@ -142,15 +136,19 @@ class DepthRecorder(object):
                       (self, self._count, duration, self._count/duration))
 
     @property
-    def camera(self):
-        """ String identifying the camera to record images from.
-        :return: Camera name.
-        """
-        return self._camera
+    def topic(self):
+        """ Get the camera topic to record images from. """
+        return self._topic
 
-    @camera.setter
-    def camera(self, camera):
-        self._camera = camera
+    @topic.setter
+    def topic(self, topic_name):
+        """ Set the camera topic to record images from. """
+        self._topic = topic_name
+
+    @topic.deleter
+    def topic(self):
+        """ Delete the camera topic to record images from. """
+        del self._topic
 
 
 def depth_from_binary(binary_name, imgsize=(240, 320)):
