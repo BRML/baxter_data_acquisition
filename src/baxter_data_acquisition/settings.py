@@ -30,7 +30,7 @@
 probability = 0.15
 
 # recording rate [Hz]
-recording_rate = 500
+recording_rate = 100.0
 
 # run time per trial [s]
 run_time = 30.0
