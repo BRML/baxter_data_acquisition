@@ -99,7 +99,7 @@ class Experiment(object):
             self._camera = baxter_interface.CameraController(cam, self._sim)
             self._rec_cam = CameraClient()
         if self._threed:
-            self._rec_senz3d = RecorderClient('senz3d_recorder')
+            # self._rec_senz3d = RecorderClient('senz3d_recorder')
             self._rec_kinect = RecorderClient('kinect_recorder')
             self._rec_flash = RecorderClient('flash_recorder')
 
@@ -182,7 +182,7 @@ class Experiment(object):
                                         self._camera.resolution)
                 if self._threed:
                     self._rec_kinect.start(outfile + '-%i_kinect' % nr)
-                    self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
+                    # self._rec_senz3d.start(outfile + '-%i_senz3d' % nr)
                     self._rec_flash.start(outfile + '-%i_flash_white' % nr)
                 flash_screen(3, 0.5, 0.5)
                 self._one_sample()
@@ -190,7 +190,7 @@ class Experiment(object):
                     self._rec_cam.stop()
                 if self._threed:
                     self._rec_kinect.stop()
-                    self._rec_senz3d.stop()
+                    # self._rec_senz3d.stop()
                     self._rec_flash.stop()
                 if self._joints:
                     self._rec_joint.stop()
