@@ -184,6 +184,8 @@ class Experiment(object):
         rospy.loginfo("Record data %s anomalies into '%s'." %
                       ('with' if self._anomalies else 'without', outfile))
         self._head.set_pan(0.0)
+        # Sleep to prevent 'switch controller stop and start list' FATAL error
+        rospy.sleep(0.1)
         self._limb.move_to_neutral()
         try:
             for nr in range(self._number):
