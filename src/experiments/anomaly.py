@@ -173,6 +173,8 @@ class Experiment(object):
         :param outfile: path and filename of the file(s) to write the data to,
         without the extension(s).
         """
+        rospy.loginfo("Switching off collision avoidance and collision " +
+                      "detection on %s arm." % self._arm)
         threads = [
             AvoidanceSuppressor(self._arm),
             DetectionSuppressor(self._arm)
