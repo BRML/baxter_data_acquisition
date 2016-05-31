@@ -82,7 +82,8 @@ class DepthRecorder(object):
 
         # TODO: make sure to use the right camera property here
         self._sub = rospy.Subscriber(self.camera,
-                                     Image, callback=self._add_image)
+                                     Image, callback=self._add_image,
+                                     queue_size=30)
         return not (self._fp_d.closed and self._fp_ts.closed)
 
     def _add_image(self, imgmsg):
@@ -98,7 +99,7 @@ class DepthRecorder(object):
             raise e
 
         # Scale float32 image to uint16 image.
-        # '{min, max}_cutoff are the minimum and maximum range of the depth
+        # '{min, max}_cutoff' are the minimum and maximum range of the depth
         # sensor of the Kinect V2.
         min_cutoff = 0.5
         max_cutoff = 4.5

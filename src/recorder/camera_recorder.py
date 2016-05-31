@@ -86,7 +86,8 @@ class CameraRecorder(object):
 
         # TODO: make sure to use the right camera property here
         self._sub = rospy.Subscriber(self.camera,
-                                     Image, callback=self._add_image)
+                                     Image, callback=self._add_image,
+                                     queue_size=30)
         return self._clip.isOpened() and not self._fp.closed
 
     def _add_image(self, imgmsg):

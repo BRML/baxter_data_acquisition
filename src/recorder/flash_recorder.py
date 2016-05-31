@@ -60,7 +60,8 @@ class FlashRecorder(object):
         self._fp.write('# timestamps [s]\n')
 
         self._sub = rospy.Subscriber('/data/head/flash_white',
-                                     Float64, callback=self._add_timestamp)
+                                     Float64, callback=self._add_timestamp,
+                                     queue_size=3)
         return not self._fp.closed
 
     def _add_timestamp(self, ts):
