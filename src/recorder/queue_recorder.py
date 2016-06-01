@@ -74,15 +74,16 @@ class QueueRecorder(Thread):
             self._queue.put(msg)
 
     def stop(self):
-        self._ros_unsubscribe()
-        rospy.loginfo("'%s' Process data queue ..." % self)
-        while not self._queue.empty():
-            next_msg = self._queue.get(block=False)  # Raises Queue.Empty if no item in queue
-            self._callback(next_msg)
-            self._queue.task_done()
-            self._count += 1
-        rospy.loginfo("'%s' ... processed data queue." % self)
-        self._display_performance()
+        if not rospy.is_shutdown():
+            self._ros_unsubscribe()
+            rospy.loginfo("'%s' Process data queue ..." % self)
+            while not rospy.is_shutdown() and not self._queue.empty():
+                next_msg = self._queue.get(block=False)  # Raises Queue.Empty if no item in queue
+                self._callback(next_msg)
+                self._queue.task_done()
+                self._count += 1
+            rospy.loginfo("'%s' ... processed data queue." % self)
+            self._display_performance()
         self.join(5.0)
         return self.is_alive()
 
