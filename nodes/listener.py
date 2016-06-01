@@ -2,9 +2,7 @@
 
 import rospy
 
-from std_msgs.msg import Float64
-
-from recorder.queue_subscriber import QueueSubscriber
+from recorder.flash_recorder import FlashRecorder
 
 
 def callback(msg):
@@ -13,13 +11,14 @@ def callback(msg):
 
 def listener():
     rospy.init_node('listener', anonymous=True)
+    rec = FlashRecorder()
+    rospy.on_shutdown(rec.clean_shutdown)
 
+    name = ['/home/mludersdorfer/software/test1.txt', '/home/mludersdorfer/software/test2.txt']
     for i in range(2):
         if rospy.is_shutdown():
             break
-        rec = QueueSubscriber(topic='chatter', msg_type=Float64, callback=callback)
-        rospy.on_shutdown(rec.clean_shutdown)
-        rec.start()
+        rec.start(outname=name[i])
         rospy.sleep(10)
         rec.stop()
         rospy.sleep(1)

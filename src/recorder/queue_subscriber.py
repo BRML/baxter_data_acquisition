@@ -58,7 +58,7 @@ class QueueSubscriber(Thread):
 
     def run(self):
         if not self._sub:
-            rospy.loginfo("'%s' Start QueueRecorder." % self)
+            rospy.loginfo("'%s' Start QueueSubscriber." % self)
             self._count = 0
             self._t_start = rospy.get_time()
             self._sub = rospy.Subscriber(self._topic, self._msg_type,
@@ -66,7 +66,7 @@ class QueueSubscriber(Thread):
                                          queue_size=100)
             return True
         else:
-            rospy.loginfo("'%s' QueueRecorder already running.")
+            rospy.loginfo("'%s' QueueSubscriber already running.")
             return False
 
     def _ros_callback(self, msg):
