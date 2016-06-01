@@ -4,7 +4,7 @@ import rospy
 
 from std_msgs.msg import Float64
 
-from recorder.queue_recorder import QueueRecorder
+from recorder.queue_subscriber import QueueSubscriber
 
 
 def callback(msg):
@@ -17,7 +17,7 @@ def listener():
     for i in range(2):
         if rospy.is_shutdown():
             break
-        rec = QueueRecorder(topic='chatter', msg_type=Float64, callback=callback)
+        rec = QueueSubscriber(topic='chatter', msg_type=Float64, callback=callback)
         rospy.on_shutdown(rec.clean_shutdown)
         rec.start()
         rospy.sleep(10)

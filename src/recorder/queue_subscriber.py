@@ -28,9 +28,9 @@ import rospy
 from threading import Thread
 
 
-class QueueRecorder(Thread):
+class QueueSubscriber(Thread):
     def __init__(self, topic, msg_type, callback):
-        super(QueueRecorder, self).__init__()
+        super(QueueSubscriber, self).__init__()
         self._topic = topic
         self._msg_type = msg_type
         self._callback = callback
