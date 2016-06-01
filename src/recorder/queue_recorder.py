@@ -23,16 +23,17 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import Queue
 import rospy
 from threading import Thread
-import Queue
 
 
 class QueueRecorder(Thread):
-    def __init__(self, topic, msg_type):
+    def __init__(self, topic, msg_type, callback):
         super(QueueRecorder, self).__init__()
         self._topic = topic
         self._msg_type = msg_type
+        self._callback = callback
         # A FIFO queue of infinite size
         self._queue = Queue.Queue(maxsize=0)
         self._sub = None
@@ -63,38 +64,27 @@ class QueueRecorder(Thread):
             self._sub = rospy.Subscriber(self._topic, self._msg_type,
                                          callback=self._ros_callback,
                                          queue_size=100)
+            return True
         else:
             rospy.loginfo("'%s' QueueRecorder already running.")
-        return self.on_start()
+            return False
 
     def _ros_callback(self, msg):
         if self._queue:
             self._queue.put(msg)
-
-    def on_start(self):
-        raise NotImplementedError()
 
     def stop(self):
         self._ros_unsubscribe()
         rospy.loginfo("'%s' Process data queue ..." % self)
         while not self._queue.empty():
             next_msg = self._queue.get(block=False)  # Raises Queue.Empty if no item in queue
-            self.process_msg(next_msg)
+            self._callback(next_msg)
             self._queue.task_done()
             self._count += 1
         rospy.loginfo("'%s' ... processed data queue." % self)
         self._display_performance()
-        ret = self.on_stop()
         self.join(5.0)
-        if self.is_alive():
-            raise Exception('Thread still alive!')
-        return ret
-
-    def process_msg(self, msg):
-        raise NotImplementedError()
-
-    def on_stop(self):
-        raise NotImplementedError()
+        return self.is_alive()
 
     def _display_performance(self):
         """ Log performance information (messages received). """
