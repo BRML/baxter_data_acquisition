@@ -24,11 +24,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import rospy
+from threading import Thread
 import Queue
 
 
-class QueueRecorder(object):
+class QueueRecorder(Thread):
     def __init__(self, topic, msg_type):
+        super(QueueRecorder, self).__init__()
         self._topic = topic
         self._msg_type = msg_type
         # A FIFO queue of infinite size
@@ -46,7 +48,14 @@ class QueueRecorder(object):
         self._queue = None
         rospy.loginfo("'%s' ... shutdown completed." % self)
 
-    def start(self):
+    def _ros_unsubscribe(self):
+        if self._sub is not None:
+            rospy.loginfo("'%s' Unregister subscriber ..." % self)
+            self._sub.unregister()
+            self._sub = None
+            rospy.loginfo("'%s' ... unregistered subscriber." % self)
+
+    def run(self):
         if not self._sub:
             rospy.loginfo("'%s' Start QueueRecorder." % self)
             self._count = 0
@@ -56,31 +65,36 @@ class QueueRecorder(object):
                                          queue_size=100)
         else:
             rospy.loginfo("'%s' QueueRecorder already running.")
+        return self.on_start()
 
     def _ros_callback(self, msg):
         if self._queue:
             self._queue.put(msg)
 
-    def _ros_unsubscribe(self):
-        if self._sub is not None:
-            rospy.loginfo("'%s' Unregister subscriber ..." % self)
-            self._sub.unregister()
-            self._sub = None
-            rospy.loginfo("'%s' ... unregistered subscriber." % self)
+    def on_start(self):
+        raise NotImplementedError()
 
     def stop(self):
         self._ros_unsubscribe()
         rospy.loginfo("'%s' Process data queue ..." % self)
         while not self._queue.empty():
             next_msg = self._queue.get(block=False)  # Raises Queue.Empty if no item in queue
-            self._callback(next_msg)
+            self.process_msg(next_msg)
             self._queue.task_done()
             self._count += 1
         rospy.loginfo("'%s' ... processed data queue." % self)
         self._display_performance()
+        ret = self.on_stop()
+        self.join(5.0)
+        if self.is_alive():
+            raise Exception('Thread still alive!')
+        return ret
 
-    def _callback(self, msg):
-        rospy.loginfo(msg.data)
+    def process_msg(self, msg):
+        raise NotImplementedError()
+
+    def on_stop(self):
+        raise NotImplementedError()
 
     def _display_performance(self):
         """ Log performance information (messages received). """
