@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+    <arg name="gazebo" default="false"/>
+
+    <arg name="rec_camera" default="false"/>
+    <arg name="rec_depth" default="false"/>
+    <arg name="experiment" default="fixed"/>
+    <arg name="number" default="1"/>
+    <arg name="anomalies" default="false"/>
+
+
+    <!-- Start simulation environment -->
+    <include if="$(arg gazebo)"
+             file="$(find baxter_data_acquisition)/launch/simulation.launch">
+        <arg name="depth_internal" value="false"/>
+        <arg name="depth_external" value="$(arg rec_depth)"/>
+    </include>
+
+    <!-- Start recorder servers -->
+    <include file="$(find baxter_data_acquisition)/launch/recorder.launch">
+        <arg name="joint" value="true"/>
+        <arg name="camera" value="$(arg rec_camera)"/>
+        <arg name="kinect" value="$(arg rec_depth)"/>
+        <arg name="senz3d" value="false"/>
+        <arg name="flash" value="$(arg rec_depth)"/>
+    </include>
+
+    <!-- Run experiment -->
+    <node name="anomaly" pkg="baxter_data_acquisition" type="anomaly.py"
+          required="true" respawn="false" output="screen" cwd="node"
+          args="--limb left --experiment $(arg experiment)
+                --number $(arg number) --anomalies $(arg anomalies)
+                --images $(arg rec_camera) --threed $(arg rec_depth)"/>
+</launch>
