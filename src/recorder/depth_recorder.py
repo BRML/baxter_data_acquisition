@@ -64,18 +64,18 @@ class DepthRecorder(object):
     def _close_binary(self):
         """ Close binary file we wrote depth image frames into. """
         if self._fp_d:
-            rospy.loginfo("'%s' Closing binary file ..." % self)
+            # rospy.loginfo("'%s' Closing binary file ..." % self)
             self._fp_d.close()
             self._fp_d = None
-            rospy.loginfo("'%s' ... closed binary file." % self)
+            # rospy.loginfo("'%s' ... closed binary file." % self)
 
     def _close_file(self):
         """ Close text file we wrote time stamps into. """
         if self._fp_ts:
-            rospy.loginfo("'%s' Closing text file ..." % self)
+            # rospy.loginfo("'%s' Closing text file ..." % self)
             self._fp_ts.close()
             self._fp_ts = None
-            rospy.loginfo("'%s' ... closed text file." % self)
+            # rospy.loginfo("'%s' ... closed text file." % self)
 
     def start(self, outname):
         """ Set up the depth recorder with the parameters for the recording

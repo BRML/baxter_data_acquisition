@@ -54,10 +54,10 @@ class FlashRecorder(object):
     def _close_file(self):
         """ Close text file we wrote time stamps into. """
         if self._fp:
-            rospy.loginfo("'%s' Closing text file ..." % self)
+            # rospy.loginfo("'%s' Closing text file ..." % self)
             self._fp.close()
             self._fp = None
-            rospy.loginfo("'%s' ... closed text file." % self)
+            # rospy.loginfo("'%s' ... closed text file." % self)
 
     def start(self, outname):
         """ Set up the flash recorder with the parameters for the recording

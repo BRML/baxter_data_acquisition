@@ -61,17 +61,17 @@ class CameraRecorder(object):
     def _close_clip(self):
         """ Close video file we wrote image frames into. """
         if self._clip:
-            rospy.loginfo("'%s' Closing video file ..." % self)
+            # rospy.loginfo("'%s' Closing video file ..." % self)
             self._clip.release()
-            rospy.loginfo("'%s' ... closed video file." % self)
+            # rospy.loginfo("'%s' ... closed video file." % self)
 
     def _close_file(self):
         """ Close text file we wrote time stamps into. """
         if self._fp:
-            rospy.loginfo("'%s' Closing text file ..." % self)
+            # rospy.loginfo("'%s' Closing text file ..." % self)
             self._fp.close()
             self._fp = None
-            rospy.loginfo("'%s' ... closed text file." % self)
+            # rospy.loginfo("'%s' ... closed text file." % self)
 
     def start(self, outname, fps, imgsize):
         """ Set up the camera recorder with the parameters for the recording
