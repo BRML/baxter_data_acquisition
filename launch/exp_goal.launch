@@ -21,7 +21,7 @@
         <arg name="joint" value="$(arg rec_joint)"/>
         <arg name="camera" value="$(arg rec_camera)"/>
         <arg name="kinect" value="$(arg rec_depth)"/>
-        <arg name="senz3d" value="$(arg rec_depth)"/>
+        <arg name="senz3d" value="false"/>
         <arg name="flash" value="$(arg rec_depth)"/>
     </include>
 
