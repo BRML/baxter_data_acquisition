@@ -75,7 +75,7 @@ class Handler(object):
                 msg = "'%s' already set up." % self
             elif req.task == 'on':
                 if not self._running:
-                    rospy.loginfo("'%s' Starting ..." % self)
+                    # rospy.loginfo("'%s' Starting ..." % self)
                     self._jr.start(outfile=req.outname)
                     self._running = True
                     resp = True
@@ -85,7 +85,7 @@ class Handler(object):
                     msg = "'%s' already running." % self
             elif req.task == 'off':
                 if self._running:
-                    rospy.loginfo("'%s' Stopping ..." % self)
+                    # rospy.loginfo("'%s' Stopping ..." % self)
                     self._jr.stop()
                     self._running = False
                     resp = True
@@ -95,7 +95,7 @@ class Handler(object):
                     msg = "'%s' not yet running." % self
             elif req.task == 'write':
                 if not self._running:
-                    rospy.loginfo("'%s' writes joint data ..." % self)
+                    # rospy.loginfo("'%s' writes joint data ..." % self)
                     self._jr.write_sample()
                     resp = True
                     msg = "'%s' ... is done writing joint data for sample to file." % self
@@ -105,7 +105,7 @@ class Handler(object):
             else:
                 if req.modality != '':
                     resp = True
-                    rospy.logdebug("'%s' Retrieving %s-header." % (self, req.modality))
+                    # rospy.logdebug("'%s' Retrieving %s-header." % (self, req.modality))
                     msg = ''
                     if req.modality == 'acceleration':
                         header = self._jr.get_header_acc()
@@ -123,8 +123,8 @@ class Handler(object):
                 else:
                     resp = False
                     msg = "'%s' No such command." % self
-        if msg != '':
-            rospy.loginfo(msg)
+        # if msg != '':
+            # rospy.loginfo(msg)
         return JointTriggerResponse(success=resp, message=msg, header=header)
 
 

@@ -56,21 +56,21 @@ class Handler(object):
         :returns: A TriggerResponse(bool success, string message).
         """
         if req.on and not self._running:
-            rospy.loginfo("'%s' Starting ..." % self)
+            # rospy.loginfo("'%s' Starting ..." % self)
             self._running = True
             resp = self._cr.start(outname=req.outname,
                                   fps=req.fps,
                                   imgsize=req.size)
             msg = "'%s' ... started." % self
         elif not req.on and self._running:
-            rospy.loginfo("'%s' Stopping ..." % self)
+            # rospy.loginfo("'%s' Stopping ..." % self)
             self._running = False
             resp = self._cr.stop()
             msg = "'%s' ... stopped." % self
         else:
             resp = False
             msg = "'%s' already/not yet running." % self
-        rospy.loginfo(msg)
+        # rospy.loginfo(msg)
         return CameraTriggerResponse(success=resp, message=msg)
 
 
