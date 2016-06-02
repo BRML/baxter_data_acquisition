@@ -105,7 +105,6 @@ class CameraRecorder(object):
                 self._sub = QueueSubscriber(topic=self._topic,
                                             msg_type=self._msg_type,
                                             callback=self._add_image)
-                self._sub.start()
                 self._running = True
             else:
                 rospy.logwarn("'%s' Already running. I do nothing." % self)

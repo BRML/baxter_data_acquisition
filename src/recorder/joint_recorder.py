@@ -106,7 +106,6 @@ class JointRecorder(object):
             self._subs[name] = QueueSubscriber(topic=topic,
                                                msg_type=msg_type,
                                                callback=callback)
-            self._subs[name].start()
         return True
 
     def stop(self):

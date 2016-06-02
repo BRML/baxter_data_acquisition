@@ -25,25 +25,23 @@
 
 import Queue
 import rospy
-from threading import Thread
 
 
-class QueueSubscriber(Thread):
+class QueueSubscriber(object):
     def __init__(self, topic, msg_type, callback):
         """ A ROS subscriber augmented with a FIFO queue for messages.
 
-        A queue subscriber is a thread which starts a ROS subscriber on a
-        given topic and message type and puts the received ROS messages in a
-        FIFO queue. Upon receiving the stop command, the queue subscriber
-        un-subscribes from the topic and processes the messages in the queue
-        with a given callback function. Once the queue is empty, the thread
-        joins.
+        A queue subscriber starts a ROS subscriber on a given topic and
+        message type and puts the received ROS messages in a FIFO queue.
+        Upon receiving the stop command, the queue subscriber un-subscribes
+        from the topic and processes the messages in the queue with a given
+        callback function. Once the queue is empty, the queue subscriber
+        returns.
         :param topic: The ROS topic to subscribe to.
         :param msg_type: The ROS message type to use.
         :param callback: The processing function to apply to the received
             ROS messages.
         """
-        super(QueueSubscriber, self).__init__()
         self._topic = topic
         self._msg_type = msg_type
         self._callback = callback
@@ -56,6 +54,8 @@ class QueueSubscriber(Thread):
         self._t_start = None
         self._t_duration = None
 
+        self._run()
+
     def __str__(self):
         return "QueueSubscriber on {}".format(rospy.get_caller_id())
 
@@ -64,7 +64,6 @@ class QueueSubscriber(Thread):
         rospy.loginfo("'%s' Initiate shutdown ..." % self)
         self._ros_unsubscribe()
         self._queue = None
-        self.join(timeout=1.0)
         rospy.loginfo("'%s' ... shutdown completed." % self)
 
     def _ros_unsubscribe(self):
@@ -75,12 +74,10 @@ class QueueSubscriber(Thread):
             self._sub = None
             rospy.loginfo("'%s' ... unregistered ROS subscriber." % self)
 
-    def run(self):
-        """ The routine called by thread.start().
-        If not yet running, start the queue subscriber by subscribing to the
-        ROS topic.
-        :raise: RuntimeError if queue subscriber is already running (thread
-            is already started).
+    def _run(self):
+        """ If not yet running, start the queue subscriber by subscribing to
+        the ROS topic.
+        :raise: RuntimeError if queue subscriber is already running.
         """
         if not self._sub:
             rospy.loginfo("'%s' Register ROS subscriber ..." % self)
@@ -90,6 +87,8 @@ class QueueSubscriber(Thread):
                                          callback=self._ros_callback,
                                          queue_size=100)
             rospy.loginfo("'%s' ... registered ROS subscriber." % self)
+        else:
+            raise RuntimeError('QueueSubscriber can only be started once!')
 
     def _ros_callback(self, msg):
         """ Callback for the ROS subscriber.
@@ -100,8 +99,7 @@ class QueueSubscriber(Thread):
 
     def stop(self):
         """ If running, stop the queue recorder by un-subscribing the ROS
-        subscriber and processing the messages in the queue. Upon completion,
-        joins the thread (i.e., itself).
+        subscriber and processing the messages in the queue.
         :return: Whether the thread (i.e., the instance) is alive.
         :raise: RuntimeError if queue subscriber is not yet running (thread
             has not been started).
@@ -110,6 +108,13 @@ class QueueSubscriber(Thread):
             self._ros_unsubscribe()
             if self._t_start:
                 self._t_duration = rospy.get_time() - self._t_start
+            self._process_msgs()
+            self._display_performance()
+        return False
+
+    def _process_msgs(self):
+        """ Process the messages in the queue with the given callback function. """
+        if self._queue.qsize() > 0:
             rospy.loginfo("'%s' Process data queue ..." % self)
             while not rospy.is_shutdown() and not self._queue.empty():
                 # Raises Queue.Empty if no item in queue. This should be
@@ -119,11 +124,9 @@ class QueueSubscriber(Thread):
                 self._queue.task_done()
                 self._count += 1
             rospy.loginfo("'%s' ... processed data queue." % self)
-            self._display_performance()
-        self.join(timeout=5.0)
-        return self.is_alive()
 
     def _display_performance(self):
         """ Log performance information (messages received). """
-        rospy.loginfo("'%s' Received %d messages in %.2f s." %
-                      (self, self._count, self._t_duration))
+        if self._t_duration:
+            rospy.loginfo("'%s' Received %d messages in %.2f s." %
+                          (self, self._count, self._t_duration))
