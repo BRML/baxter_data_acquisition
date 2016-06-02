@@ -64,48 +64,48 @@ class Handler(object):
                                          anomaly_mode=mode)
                 self._setup = True
                 resp = True
-                msg = "%s successfully set up." % self
+                msg = "'%s' successfully set up." % self
             else:
-                msg = "Need to set up %s first!" % self
+                msg = "'%s' Need to set up first!" % self
                 rospy.logerr(msg)
                 return JointTriggerResponse(success=False, message=msg)
         else:  # Joint Recorder is set up, joint server can do its thing
             if req.setup != '':
                 resp = True
-                msg = "%s already set up." % self
+                msg = "'%s' already set up." % self
             elif req.task == 'on':
                 if not self._running:
-                    rospy.loginfo("Starting %s ..." % self)
+                    rospy.loginfo("'%s' Starting ..." % self)
                     self._jr.start(outfile=req.outname)
                     self._running = True
                     resp = True
-                    msg = "... %s started." % self
+                    msg = "'%s' ... started." % self
                 else:
                     resp = False
-                    msg = "%s already running." % self
+                    msg = "'%s' already running." % self
             elif req.task == 'off':
                 if self._running:
-                    rospy.loginfo("Stopping %s ..." % self)
+                    rospy.loginfo("'%s' Stopping ..." % self)
                     self._jr.stop()
                     self._running = False
                     resp = True
-                    msg = "... %s stopped." % self
+                    msg = "'%s' ... stopped." % self
                 else:
                     resp = False
-                    msg = "%s not yet running." % self
+                    msg = "'%s' not yet running." % self
             elif req.task == 'write':
                 if not self._running:
-                    rospy.loginfo("%s writes joint data ..." % self)
+                    rospy.loginfo("'%s' writes joint data ..." % self)
                     self._jr.write_sample()
                     resp = True
-                    msg = "... %s is done writing joint data for sample to file." % self
+                    msg = "'%s' ... is done writing joint data for sample to file." % self
                 else:
                     resp = False
-                    msg = "Need to stop %s first." % self
+                    msg = "'%s' Need to stop first." % self
             else:
                 if req.modality != '':
                     resp = True
-                    rospy.logdebug("Retrieving %s-header." % req.modality)
+                    rospy.logdebug("'%s' Retrieving %s-header." % (self, req.modality))
                     msg = ''
                     if req.modality == 'acceleration':
                         header = self._jr.get_header_acc()
@@ -119,10 +119,10 @@ class Handler(object):
                         header = self._jr.get_header_pose()
                     else:
                         resp = False
-                        msg = "No such header: '%s'." % req.modality
+                        msg = "'%s' No such header: '%s'." % (self, req.modality)
                 else:
                     resp = False
-                    msg = "No such %s-command." % self
+                    msg = "'%s' No such command." % self
         if msg != '':
             rospy.loginfo(msg)
         return JointTriggerResponse(success=resp, message=msg, header=header)
@@ -140,7 +140,7 @@ def main():
     rospy.on_shutdown(h.clean_shutdown)
 
     s = rospy.Service(service_name, JointTrigger, h.handle_trigger)
-    rospy.loginfo('%s ready to get triggered.' % h)
+    rospy.loginfo("'%s' ready to get triggered." % h)
 
     rospy.spin()
 

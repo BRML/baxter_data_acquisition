@@ -59,6 +59,6 @@ if __name__ == "__main__":
     rospy.on_shutdown(h.clean_shutdown)
 
     s = rospy.Service(service_name, Trigger, h.handle_trigger)
-    rospy.loginfo('%s ready to get triggered.' % h)
+    rospy.loginfo("'%s' ready to get triggered." % h)
 
     rospy.spin()
