@@ -22,6 +22,30 @@ All experiments can be run both on the real robot as well as in the
 [Gazebo](http://gazebosim.org/)-powered 
 [Baxter simulator](http://sdk.rethinkrobotics.com/wiki/Baxter_Simulator).
 
+### Structure of the repository
+```bash
+.
+|
++-- data/setup/        setup files for anomaly experiment
+|
++-- launch/            ROS launch files
+|
++-- nodes/             implementation of recorder ROS nodes
+|
++-- scripts/           implementation of experiment ROS nodes
+|
++-- share/images/      images for collision experiment
+|
++-- src/                            python modules
+|   +-- baxter_data_acquisition/    helper functions and settings
+|   +-- control/                    custom controller and interpolator
+|   +-- experiments/                implementation of experiments
+|   +-- recorder/                   implementation of recorders
+|
++-- srv/               custom ROS service definitions for recorder nodes
+|
++-- urdf/              custom URDF describing the Baxter robot
+```
 
 ## How to install and use
 The Baxter data acquisition software is implemented as a ROS package.
