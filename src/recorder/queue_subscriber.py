@@ -93,10 +93,10 @@ class QueueSubscriber(Thread):
 
     def _ros_callback(self, msg):
         """ Callback for the ROS subscriber.
-        Puts received messages into a FIFO queue.
+        Puts received messages and the current time stamp into a FIFO queue.
         """
         if self._queue:
-            self._queue.put(msg)
+            self._queue.put((rospy.get_time(), msg))
 
     def stop(self):
         """ If running, stop the queue recorder by un-subscribing the ROS
@@ -114,8 +114,8 @@ class QueueSubscriber(Thread):
             while not rospy.is_shutdown() and not self._queue.empty():
                 # Raises Queue.Empty if no item in queue. This should be
                 # prevented by checking self._queue.empty() above.
-                next_msg = self._queue.get(block=False)
-                self._callback(next_msg)
+                next_stamped_msg = self._queue.get(block=False)
+                self._callback(next_stamped_msg)
                 self._queue.task_done()
                 self._count += 1
             rospy.loginfo("'%s' ... processed data queue." % self)
