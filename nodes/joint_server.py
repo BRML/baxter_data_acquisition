@@ -44,8 +44,8 @@ class Handler(object):
         return rospy.get_caller_id()
 
     def clean_shutdown(self):
-        rospy.loginfo("Exiting %s." % self)
-        return True
+        rospy.loginfo("Exiting '%s'." % self)
+        self._jr.clean_shutdown()
 
     def handle_trigger(self, req):
         """ Handler handle for the joint recorder server.

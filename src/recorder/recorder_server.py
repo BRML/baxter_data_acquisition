@@ -40,8 +40,8 @@ class RecorderServer(object):
         return rospy.get_caller_id()
 
     def clean_shutdown(self):
-        rospy.loginfo("Exiting %s." % self)
-        return True
+        rospy.loginfo("Exiting '%s'." % self)
+        self._rec.clean_shutdown()
 
     def handle_trigger(self, req):
         """ Trigger handle for the recorder server.

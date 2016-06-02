@@ -75,6 +75,12 @@ class JointRecorder(object):
     def __str__(self):
         return rospy.get_caller_id()
 
+    def clean_shutdown(self):
+        """ Clean shutdown of the joint recorder. """
+        for name in self._subs:
+            if self._subs[name]:
+                self._subs[name].clean_shutdown()
+
     def start(self, outfile):
         """ Start joint data recording.
         :param outfile: Filename to write the data to, without the extension.

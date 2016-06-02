@@ -41,6 +41,11 @@ class SenzRecorder(object):
         self._rec_depth = DepthRecorder()
         self._rec_depth.topic = '/senz3d/depth/image'
 
+    def clean_shutdown(self):
+        """ Clean shutdown of the Kinect recorder. """
+        self._rec_rgb.clean_shutdown()
+        self._rec_depth.clean_shutdown()
+
     def start(self, outname):
         """ Set up the Senz3d recorder and record both RGB- and depth data.
         :param outname: Filename to write the RGB- and depth data to, without

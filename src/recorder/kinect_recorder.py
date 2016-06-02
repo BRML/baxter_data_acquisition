@@ -41,6 +41,11 @@ class KinectRecorder(object):
         self._rec_depth = DepthRecorder()
         self._rec_depth.topic = '/kinect/depth/image'
 
+    def clean_shutdown(self):
+        """ Clean shutdown of the Kinect recorder. """
+        self._rec_rgb.clean_shutdown()
+        self._rec_depth.clean_shutdown()
+
     def start(self, outname):
         """ Set up the Kinect recorder and record both RGB- and depth data.
         :param outname: Filename to write the RGB- and depth data to, without
