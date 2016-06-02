@@ -24,34 +24,29 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-""" Data recording settings """
-
+# ============================================================================
+# Data recording settings
+# ============================================================================
 # probability for collision/anomaly [0, 1]
 probability = 0.15
-
 # recording rate [Hz]
 recording_rate = 100.0
-
 # run time per trial [s]
 run_time = 30.0
 
-""" 'Anomaly' parameters """
-
+# ============================================================================
+# 'Anomaly' parameters
+# ============================================================================
 # PID parameters modification limits
 pid_mod = {'p_mult': 3.535, 'i_mult': 3.535, 'd_mult': 3.535}
-
 # number of anomalous steps, commanded at interpolator_rate
 anomal_iters = 75
-
-
 # interpolator frequency [Hz]
 interpolator_rate = 150
-
 # interpolator duration offset [s]
-duration_offset = 1.729  # 2.95
-
+duration_offset = 1.729
 # interpolator maximum joint velocity scale
-dq_scale = 0.4  # 1.0
+dq_scale = 0.4
 
 
 def joint_names(limb):
@@ -84,8 +79,6 @@ def dq_lim(limb, scale=0.4):
     """
     if not 0.0 <= scale <= 1.0:
         raise ValueError("Scale must be in [0, 1]!")
-    # values = [(-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5),
-    #           (-4.0, 4.0), (-4.0, 4.0), (-4.0, 4.0)]
     values = [(-.75, .75), (-.75, .75), (-.75, .75), (-.75, .75),
               (-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)]
     values = [tuple([v*scale for v in val]) for val in values]
@@ -102,9 +95,6 @@ def ddq_lim(limb):
     values = [(-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0),
               (-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0)]
     return {a: b for a, b in zip(joint_names(limb), values)}
-
-
-""" PID control parameters """
 
 
 def kpid(limb):
@@ -135,11 +125,11 @@ def tau_lim(limb, scale=0.2):
     return {a: b for a, b in zip(joint_names(limb), values)}
 
 
-""" 'Seemingly goal oriented movement' parameters """
-
+# ============================================================================
+# 'Seemingly goal oriented movement' parameters
+# ============================================================================
 # scaling factor for joint torques
 tau_scale = 0.005
-
 # duration to apply torque control [s]
 tau_duration_min = 5.0
-tau_duration_max = 30.0
+tau_duration_max = run_time
