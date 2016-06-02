@@ -86,9 +86,13 @@ class FlashRecorder(object):
             return not self._fp.closed
         return False
 
-    def _add_time_stamp(self, msg):
+    def _add_time_stamp(self, stamped_msg):
         """ Flash subscriber callback function """
-        self._fp.write('%f\n' % msg.data)
+        ts, msg = stamped_msg
+        # For debugging purposes, we could compare the time stamps with the
+        # values sent by the experiment
+        # rospy.loginfo("'%s' recorded ts %f, sent ts was %f." % (self, ts, msg.data))
+        self._fp.write('%f\n' % ts)
         self._fp.flush()
 
     def stop(self):
