@@ -44,6 +44,7 @@ from std_msgs.msg import (
 )
 
 from baxter_data_acquisition.srv import JointTrigger
+from recorder.queue_subscriber import QueueSubscriber
 
 
 class JointRecorder(object):
@@ -71,8 +72,6 @@ class JointRecorder(object):
         self._data = None
         self._subs = {n: None for n in self._topics}
 
-        self._t_start = None
-
     def __str__(self):
         return rospy.get_caller_id()
 
@@ -81,7 +80,6 @@ class JointRecorder(object):
         :param outfile: Filename to write the data to, without the extension.
         """
         self._filename = outfile + '.h5'
-        self._t_start = rospy.get_time()
 
         self._data = dict()
         self._data['acceleration'] = dict()
@@ -102,21 +100,23 @@ class JointRecorder(object):
         self._data['pose']['label'] = list()
 
         for name in self._topics:
+            if rospy.is_shutdown():
+                break
             topic, msg_type, callback = self._topics[name]
-            self._subs[name] = rospy.Subscriber(topic, msg_type, callback,
-                                                queue_size=10)
+            self._subs[name] = QueueSubscriber(topic=topic,
+                                               msg_type=msg_type,
+                                               callback=callback)
+            self._subs[name].start()
         return True
 
     def stop(self):
         """ Stop joint data recording. """
-        # TODO: is there a way to process the remaining subscriber queue before closing it?
         for name in self._subs:
-            if self._subs[name] is not None:
-                rospy.loginfo("'%s' Unregister subscriber '%s' ..." % (self, name))
-                self._subs[name].unregister()
-                rospy.loginfo("'%s' ... unregistered subscriber '%s'." % (self, name))
-
-        self._display_performance()
+            if rospy.is_shutdown():
+                break
+            if self._subs[name]:
+                self._subs[name].stop()
+                self._subs[name] = None
         return True
 
     def write_sample(self):
@@ -149,17 +149,6 @@ class JointRecorder(object):
                     else:
                         gf.attrs.create('Header', data=self._header[modality])
         # print 'Done writing sample data to file.'
-
-    def _display_performance(self):
-        """ Log performance information (messages received). """
-        duration = rospy.get_time() - self._t_start
-        for name in self._topics:
-            modality, field = name.split(' ')
-            if '/' in modality:
-                modality = modality.split('/')[0]
-            count = len(self._data[modality][field])
-            rospy.loginfo("'%s' Received %d %s-messages in %.2f s (%.2f Hz)." %
-                          (self, count, name, duration, count / duration))
 
     def _define_subscriber_topics(self):
         """ Define the subscriber topics for the different recorded modalities.
@@ -208,75 +197,83 @@ class JointRecorder(object):
                              UInt16,
                              self._cb_pose_label)}
 
-    def _cb_acc(self, data):
-        acc = data.linear_acceleration
-        self._data['acceleration']['measured'].append([rospy.get_time(),
+    def _cb_acc(self, stamped_msg):
+        ts, msg = stamped_msg
+        acc = msg.linear_acceleration
+        self._data['acceleration']['measured'].append([ts,
                                                        acc.x, acc.y, acc.z])
         self._rate.sleep()
 
-    def _cb_anom(self, data):
-        anom = list(data.data)
-        self._data['anomaly']['commanded'].append([rospy.get_time()] + anom)
+    def _cb_anom(self, stamped_msg):
+        ts, msg = stamped_msg
+        anom = list(msg.data)
+        self._data['anomaly']['commanded'].append([ts] + anom)
 
-    def _cb_cfg_comm(self, data):
-        cfg = list(data.command)
-        self._data['configuration']['commanded'].append(
-                [rospy.get_time()] + cfg)
+    def _cb_cfg_comm(self, stamped_msg):
+        ts, msg = stamped_msg
+        cfg = list(msg.command)
+        self._data['configuration']['commanded'].append([ts] + cfg)
         self._rate.sleep()
 
-    def _cb_cfg_des(self, data):
-        cfg = list(data.command)
-        self._data['configuration']['desired'].append([rospy.get_time()] + cfg)
+    def _cb_cfg_des(self, stamped_msg):
+        ts, msg = stamped_msg
+        cfg = list(msg.command)
+        self._data['configuration']['desired'].append([ts] + cfg)
 
-    def _cb_state(self, data):
-        time = rospy.get_time()
-        name = list(data.name)
-        pos = list(data.position)
-        effort = list(data.effort)
+    def _cb_state(self, stamped_msg):
+        ts, msg = stamped_msg
+        name = list(msg.name)
+        pos = list(msg.position)
+        effort = list(msg.effort)
         try:
             p = [pos[name.index(j)] for j in self._header['configuration'][1:]]
-            self._data['configuration']['measured'].append([time] + p)
+            self._data['configuration']['measured'].append([ts] + p)
             e = [effort[name.index(j)] for j in self._header['effort'][1:]]
-            self._data['effort']['measured'].append([time] + e)
+            self._data['effort']['measured'].append([ts] + e)
         except ValueError:
             # there seems to be a BUG: every few callbacks name is not joints
             # but ['r_gripper_l_finger_joint'] with corresponding pos and efft
             pass
         self._rate.sleep()
 
-    def _cb_efft_comm(self, data):
-        name = list(data.names)
-        effort = list(data.command)
+    def _cb_efft_comm(self, stamped_msg):
+        ts, msg = stamped_msg
+        name = list(msg.names)
+        effort = list(msg.command)
         try:
             e = [effort[name.index(j)] for j in self._header['effort'][1:]]
-            self._data['effort']['commanded'].append([rospy.get_time()] + e)
+            self._data['effort']['commanded'].append([ts] + e)
         except ValueError:
-            print "ERROR-cb_efft_comm %i-Key does not exist." % data.header.seq
+            print "ERROR-cb_efft_comm %i-Key does not exist." % msg.header.seq
         self._rate.sleep()
 
-    def _cb_efft_gen(self, data):
-        effort = list(data.command)
-        self._data['effort']['generated'].append([rospy.get_time()] + effort)
+    def _cb_efft_gen(self, stamped_msg):
+        ts, msg = stamped_msg
+        effort = list(msg.command)
+        self._data['effort']['generated'].append([ts] + effort)
         self._rate.sleep()
 
-    def _cb_efft_des(self, data):
-        effort = list(data.command)
-        self._data['effort']['desired'].append([rospy.get_time()] + effort)
+    def _cb_efft_des(self, stamped_msg):
+        ts, msg = stamped_msg
+        effort = list(msg.command)
+        self._data['effort']['desired'].append([ts] + effort)
         self._rate.sleep()
 
-    def _cb_pose(self, data):
-        pose = [data.pose.position.x,
-                data.pose.position.y,
-                data.pose.position.z,
-                data.pose.orientation.x,
-                data.pose.orientation.y,
-                data.pose.orientation.z,
-                data.pose.orientation.w]
-        self._data['pose']['measured'].append([rospy.get_time()] + pose)
+    def _cb_pose(self, stamped_msg):
+        ts, msg = stamped_msg
+        pose = [msg.pose.position.x,
+                msg.pose.position.y,
+                msg.pose.position.z,
+                msg.pose.orientation.x,
+                msg.pose.orientation.y,
+                msg.pose.orientation.z,
+                msg.pose.orientation.w]
+        self._data['pose']['measured'].append([ts] + pose)
         self._rate.sleep()
 
-    def _cb_pose_label(self, data):
-        self._data['pose']['label'].append([rospy.get_time(), data.data])
+    def _cb_pose_label(self, stamped_msg):
+        ts, msg = stamped_msg
+        self._data['pose']['label'].append([ts, msg.data])
         self._rate.sleep()
 
     def _define_headers(self):
