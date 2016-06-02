@@ -112,10 +112,11 @@ class CameraRecorder(object):
             return self._clip.isOpened() and not self._fp.closed
         return False
 
-    def _add_image(self, imgmsg):
+    def _add_image(self, stamped_msg):
         """ Camera subscriber callback function """
+        ts, imgmsg = stamped_msg
         # write time stamp to file
-        self._fp.write('%f\n' % rospy.get_time())
+        self._fp.write('%f\n' % ts)
         self._fp.flush()
         # add frame to video
         try:

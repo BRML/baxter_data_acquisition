@@ -110,10 +110,11 @@ class DepthRecorder(object):
             return not (self._fp_d.closed and self._fp_ts.closed)
         return False
 
-    def _add_image(self, imgmsg):
+    def _add_image(self, stamped_msg):
         """ Camera subscriber callback function """
+        ts, imgmsg = stamped_msg
         # write time stamp to file
-        self._fp_ts.write('%f\n' % rospy.get_time())
+        self._fp_ts.write('%f\n' % ts)
         self._fp_ts.flush()
         # add frame to binary file
         try:
