@@ -31,6 +31,7 @@ import rospy
 from sensor_msgs.msg import Image
 
 from baxter_data_acquisition.srv import CameraTrigger
+from recorder.queue_subscriber import QueueSubscriber
 
 
 class CameraRecorder(object):
@@ -39,20 +40,42 @@ class CameraRecorder(object):
         with the head camera of the baxter robot into a .avi video file and
         timestamps for each image frame into an accompanying .txt file.
         """
-        self._clip = None
-        self._sub = None
-        self._fp = None
         self._topic = '/cameras/head_camera/image'
-
-        self._count = 0
-        self._t_start = None
+        self._msg_type = Image
+        self._clip = None
+        self._fp = None
+        self._sub = None
+        self._running = False
 
     def __str__(self):
         return rospy.get_caller_id()
 
+    def clean_shutdown(self):
+        """ Clean shutdown of the camera recorder. """
+        if self._sub:
+            self._sub.clean_shutdown()
+        self._close_clip()
+        self._close_file()
+        self._running = False
+
+    def _close_clip(self):
+        """ Close video file we wrote image frames into. """
+        if self._clip:
+            rospy.loginfo("'%s' Closing video file ..." % self)
+            self._clip.release()
+            rospy.loginfo("'%s' ... closed video file." % self)
+
+    def _close_file(self):
+        """ Close text file we wrote time stamps into. """
+        if self._fp:
+            rospy.loginfo("'%s' Closing text file ..." % self)
+            self._fp.close()
+            self._fp = None
+            rospy.loginfo("'%s' ... closed text file." % self)
+
     def start(self, outname, fps, imgsize):
         """ Set up the camera recorder with the parameters for the recording
-        and subscribe to the callback function of the baxter head camera.
+        and subscribe to the callback function of the camera.
         :param outname: Filename to write the video and text file to, without
             the extension.
         :param fps: Frames per second for video file.
@@ -60,36 +83,41 @@ class CameraRecorder(object):
             file.
         :return: Whether the video- and text file were opened successfully.
         """
-        self._count = 0
-        self._t_start = rospy.get_time()
-
-        try:
-            self._fp = open(outname + '.txt', 'w')
-        except IOError as e:
-            rospy.logfatal("'%s' Failed to open text file!" % self)
-            raise e
-        self._fp.write('# timestamps [s]\n')
-
-        self._clip = cv2.VideoWriter(outname + '.avi',
-                                     fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
-                                     fps=fps,
-                                     frameSize=imgsize,
-                                     isColor=True)
-        if not self._clip.isOpened():
-            rospy.logfatal("'%s' Failed to open videoWriter instance!" % self)
-            raise IOError("'%s' Failed to open videoWriter instance!" % self)
-
-        self._sub = rospy.Subscriber(self._topic,
-                                     Image, callback=self._add_image,
-                                     queue_size=30)
-        return self._clip.isOpened() and not self._fp.closed
+        if not rospy.is_shutdown():
+            if not self._running:
+                # open text file
+                try:
+                    self._fp = open(outname + '.txt', 'w')
+                except IOError as e:
+                    rospy.logfatal("'%s' Failed to open text file!" % self)
+                    raise e
+                self._fp.write('# timestamps [s]\n')
+                # open video file
+                self._clip = cv2.VideoWriter(outname + '.avi',
+                                             fourcc=cv2.cv.CV_FOURCC('M', 'J', 'P', 'G'),
+                                             fps=fps,
+                                             frameSize=imgsize,
+                                             isColor=True)
+                if not self._clip.isOpened():
+                    rospy.logfatal("'%s' Failed to open videoWriter instance!" % self)
+                    raise IOError("'%s' Failed to open videoWriter instance!" % self)
+                # start subscriber
+                self._sub = QueueSubscriber(topic=self._topic,
+                                            msg_type=self._msg_type,
+                                            callback=self._add_image)
+                self._sub.start()
+                self._running = True
+            else:
+                rospy.logwarn("'%s' Already running. I do nothing." % self)
+            return self._clip.isOpened() and not self._fp.closed
+        return False
 
     def _add_image(self, imgmsg):
         """ Camera subscriber callback function """
-        ts = rospy.get_time()
-        self._fp.write('%f\n' % ts)
+        # write time stamp to file
+        self._fp.write('%f\n' % rospy.get_time())
         self._fp.flush()
-
+        # add frame to video
         try:
             img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg, 'bgr8')
         except cv_bridge.CvBridgeError as e:
@@ -100,32 +128,24 @@ class CameraRecorder(object):
         except Exception as e:
             rospy.logfatal("'%s' Recording frame failed!" % self)
             raise e
-        self._count += 1
 
     def stop(self):
-        """ Stop recording data from the head camera.
+        """ Stop recording data from the camera.
         :return: Whether the video- and text file are open.
         """
-        # TODO: is there a way to process the remaining subscriber queue before closing it?
-        if self._sub is not None:
-            rospy.loginfo("'%s' Unregister subscriber ..." % self)
-            self._sub.unregister()
-            rospy.loginfo("'%s' ... unregistered subscriber." % self)
-        rospy.loginfo("'%s' Closing video file ..." % self)
-        self._clip.release()
-        rospy.loginfo("'%s' ... closed video file." % self)
-        # rospy.loginfo("'%s' Closing text file ..." % self)
-        # self._fp.close()
-        # rospy.loginfo("'%s' ... closed text file." % self)
-
-        self._display_performance()
-        return self._clip.isOpened() or self._fp.closed
-
-    def _display_performance(self):
-        """ Log performance information (messages received). """
-        duration = rospy.get_time() - self._t_start
-        rospy.loginfo("'%s' Received %d messages in %.2f s (%.2f Hz)." %
-                      (self, self._count, duration, self._count/duration))
+        if not rospy.is_shutdown():
+            if self._running:
+                if self._sub:
+                    self._sub.stop()
+                    self._sub = None
+                self._close_clip()
+                self._close_file()
+                self._running = False
+                return False
+            else:
+                rospy.logwarn("'%s' Not running. I do nothing." % self)
+                return not self._fp.closed
+        return False
 
     @property
     def topic(self):

@@ -68,12 +68,14 @@ class FlashRecorder(object):
         """
         if not rospy.is_shutdown():
             if not self._running:
+                # open text file
                 try:
                     self._fp = open('{}.txt'.format(outname), 'w')
                 except IOError as e:
                     rospy.logfatal("'%s' Failed to open text file!" % self)
                     raise e
                 self._fp.write('# timestamps [s]\n')
+                # start subscriber
                 self._sub = QueueSubscriber(topic=self._topic,
                                             msg_type=self._msg_type,
                                             callback=self._add_time_stamp)
