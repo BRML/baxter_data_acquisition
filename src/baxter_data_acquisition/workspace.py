@@ -25,6 +25,9 @@
 
 from collections import Sequence
 import numpy as np
+import rospy
+
+from visualization_msgs.msg import Marker, MarkerArray
 
 
 class Workspace(Sequence):
@@ -47,7 +50,7 @@ class Workspace(Sequence):
         is intersected at [22.5, 67.5, ..., 360) degrees, where 0 degrees is
         along the x-axis.
         A regular grid is created by combining these points with heights
-        [0, +-v1, +-2v1, ...] and [0, +-v2, +-2v2, ...], respectively.
+        [0, +-v1, +-2v1, ...] and [+-v2/2, +-2v2/2, ...], respectively.
         """
         phi = np.arange(start=0, stop=2*np.pi, step=np.pi/4)
 
@@ -62,11 +65,11 @@ class Workspace(Sequence):
                 for z in np.arange(0, 1.43, v):
                     xyz.append((x, y, z))
                 # TODO set proper lower value
-                for z in np.arange(0, -0.92, -v):
+                for z in np.arange(-v, -0.92, -v):
                     xyz.append((x, y, z))
             return xyz
 
-        self._clusters = np.array(mesh(r1, v1) + mesh(r2, v2))
+        self._clusters = np.array(mesh(r1, v1) + mesh(r2, v2/2))
 
     def cluster_position(self, position):
         """ Classify a given position according to the closest cluster in the
@@ -76,3 +79,47 @@ class Workspace(Sequence):
         """
         dists = np.linalg.norm(self._clusters - np.asarray(position), axis=1)
         return np.argmin(dists, axis=0)
+
+    def visualize_rviz(self):
+        pub = rospy.Publisher('workspace_visualization_array', MarkerArray, queue_size=100)
+        marker_array = MarkerArray()
+        idx = 0
+        # for cluster in self._clusters:
+        #     marker = Marker()
+        #     marker.header.frame_id = "base"
+        #     marker.id = idx
+        #     marker.type = marker.SPHERE
+        #     marker.action = marker.ADD
+        #     marker.scale.x = 1.2
+        #     marker.scale.y = 1.2
+        #     marker.scale.z = 1.2
+        #     marker.color.a = .5
+        #     marker.color.r = 0.0
+        #     marker.color.g = 1.0
+        #     marker.color.b = 0.0
+        #     marker.pose.orientation.w = 1.0
+        #     marker.pose.position.x = cluster[0]
+        #     marker.pose.position.y = cluster[1]
+        #     marker.pose.position.z = cluster[2]
+        marker = Marker()
+        marker.header.frame_id = "base"
+        marker.id = idx
+        marker.type = marker.SPHERE
+        marker.action = marker.ADD
+        marker.scale.x = 1.2
+        marker.scale.y = 1.2
+        marker.scale.z = 1.2
+        marker.color.a = .5
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        marker.pose.orientation.w = 1.0
+        marker.pose.position.x = 1.0
+        marker.pose.position.y = 0.0
+        marker.pose.position.z = 0.0
+
+        marker_array.markers.append(marker)
+        idx += 1
+
+        pub.publish(marker_array)
+        return True
