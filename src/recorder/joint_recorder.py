@@ -243,13 +243,11 @@ class JointRecorder(object):
 
     def _cb_efft_comm(self, stamped_msg):
         ts, msg = stamped_msg
-        name = list(msg.names)
-        effort = list(msg.command)
-        try:
+        if msg.mode == msg.TORQUE_MODE:
+            name = list(msg.names)
+            effort = list(msg.command)
             e = [effort[name.index(j)] for j in self._header['effort'][1:]]
             self._data['effort']['commanded'].append([ts] + e)
-        except ValueError:
-            print "ERROR-cb_efft_comm %i-Key does not exist." % msg.header.seq
         self._rate.sleep()
 
     def _cb_efft_gen(self, stamped_msg):
