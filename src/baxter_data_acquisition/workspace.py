@@ -81,45 +81,28 @@ class Workspace(Sequence):
         return np.argmin(dists, axis=0)
 
     def visualize_rviz(self):
-        pub = rospy.Publisher('workspace_visualization_array', MarkerArray, queue_size=100)
+        topic = 'workspace_marker_array'
+        pub = rospy.Publisher(topic, MarkerArray, queue_size=100)
         marker_array = MarkerArray()
-        idx = 0
-        # for cluster in self._clusters:
-        #     marker = Marker()
-        #     marker.header.frame_id = "base"
-        #     marker.id = idx
-        #     marker.type = marker.SPHERE
-        #     marker.action = marker.ADD
-        #     marker.scale.x = 1.2
-        #     marker.scale.y = 1.2
-        #     marker.scale.z = 1.2
-        #     marker.color.a = .5
-        #     marker.color.r = 0.0
-        #     marker.color.g = 1.0
-        #     marker.color.b = 0.0
-        #     marker.pose.orientation.w = 1.0
-        #     marker.pose.position.x = cluster[0]
-        #     marker.pose.position.y = cluster[1]
-        #     marker.pose.position.z = cluster[2]
-        marker = Marker()
-        marker.header.frame_id = "base"
-        marker.id = idx
-        marker.type = marker.SPHERE
-        marker.action = marker.ADD
-        marker.scale.x = 1.2
-        marker.scale.y = 1.2
-        marker.scale.z = 1.2
-        marker.color.a = .5
-        marker.color.r = 0.0
-        marker.color.g = 1.0
-        marker.color.b = 0.0
-        marker.pose.orientation.w = 1.0
-        marker.pose.position.x = 1.0
-        marker.pose.position.y = 0.0
-        marker.pose.position.z = 0.0
-
-        marker_array.markers.append(marker)
-        idx += 1
-
-        pub.publish(marker_array)
+        while not rospy.is_shutdown():
+            for idx, cluster in enumerate(self._clusters):
+                marker = Marker()
+                marker.header.frame_id = "world"
+                marker.id = idx
+                marker.type = marker.SPHERE
+                marker.action = marker.ADD
+                marker.scale.x = 0.1
+                marker.scale.y = 0.1
+                marker.scale.z = 0.1
+                marker.color.a = 1.0
+                marker.color.r = 1.0
+                marker.color.g = 1.0
+                marker.color.b = 0.0
+                marker.pose.orientation.w = 1.0
+                marker.pose.position.x = cluster[0]
+                marker.pose.position.y = cluster[1]
+                marker.pose.position.z = cluster[2]
+                marker_array.markers.append(marker)
+            pub.publish(marker_array)
+            rospy.sleep(1)
         return True
