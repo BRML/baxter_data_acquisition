@@ -62,14 +62,15 @@ from recorder import (
 
 
 class Experiment(object):
-    def __init__(self, limb, experiment, number, anomalies, images, threed,
-                 sim):
+    def __init__(self, limb, experiment, number, anomalies, joints, images,
+                 threed, sim):
         """ Joint position data acquisition with automatically induced
         anomalies.
         :param limb: The limb to record data from.
         :param experiment: The order of positions in the experiment.
         :param number: The number of samples to record.
         :param anomalies: Whether there are anomalies in the data.
+        :param joints: Whether joint data are to be recorded.
         :param images: Whether images are to be recorded.
         :param threed: Whether 3d point clouds are to be recorded.
         :param sim: Whether in simulation or reality.
@@ -79,6 +80,7 @@ class Experiment(object):
         self._experiment = experiment
         self._number = number
         self._anomalies = anomalies
+        self._joints = joints
         self._images = images
         self._threed = threed
         self._sim = sim
@@ -107,9 +109,17 @@ class Experiment(object):
                                          debug=True)
 
         self._limb = baxter_interface.Limb(self._arm)
-        self._rec_joint = JointClient(limb=self._arm,
-                                      rate=settings.recording_rate,
-                                      anomaly_mode='automatic')
+        ns = 'data/limb/' + self._arm
+        if self._joints:
+            self._rec_joint = JointClient(limb=self._arm,
+                                          rate=settings.recording_rate,
+                                          anomaly_mode='automatic')
+            self._pub_cfg_des = rospy.Publisher(ns + '/cfg/des', JointCommand,
+                                                queue_size=10)
+            self._pub_cfg_comm = rospy.Publisher(ns + '/cfg/comm', JointCommand,
+                                                 queue_size=10)
+            self._pub_efft_gen = rospy.Publisher(ns + '/efft/gen', JointCommand,
+                                                 queue_size=10)
         self._head = baxter_interface.Head()
 
         if self._images:
@@ -122,13 +132,6 @@ class Experiment(object):
 
         self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
                                          UInt16, queue_size=10)
-        ns = 'data/limb/' + self._arm
-        self._pub_cfg_des = rospy.Publisher(ns + '/cfg/des', JointCommand,
-                                            queue_size=10)
-        self._pub_cfg_comm = rospy.Publisher(ns + '/cfg/comm', JointCommand,
-                                             queue_size=10)
-        self._pub_efft_gen = rospy.Publisher(ns + '/efft/gen', JointCommand,
-                                             queue_size=10)
 
         self._previous_config = None
         if self._anomalies:
@@ -193,8 +196,8 @@ class Experiment(object):
                     break
                 rospy.loginfo('Recording sample %i of %d.' %
                               (nr + 1, self._number))
-
-                self._rec_joint.start(outfile)
+                if self._joints:
+                    self._rec_joint.start(outfile)
                 if self._images:
                     self._rec_cam.start(outfile + '-%i' % nr,
                                         self._camera.fps,
@@ -209,8 +212,9 @@ class Experiment(object):
                 if self._threed:
                     self._rec_kinect.stop()
                     self._rec_flash.stop()
-                self._rec_joint.stop()
-                self._rec_joint.write_sample()
+                if self._joints:
+                    self._rec_joint.stop()
+                    self._rec_joint.write_sample()
         except rospy.ROSInterruptException:
             pass
         for thread in threads:
@@ -235,9 +239,10 @@ class Experiment(object):
         tau_lim = settings.tau_lim(self._arm, scale=0.2)
         for idx in idxs:
             q_des = {a: b for a, b in zip(jns, self._configs[idx])}
-            command = [q_des[jn]
-                       for jn in self._rec_joint.get_header_cfg()[1:]]
-            self._pub_cfg_des.publish(command=command)
+            if self._joints:
+                command = [q_des[jn]
+                           for jn in self._rec_joint.get_header_cfg()[1:]]
+                self._pub_cfg_des.publish(command=command)
             anomaly_pars = None
             if self._anomalies:
                 if self._sampler.shall_anomaly():
@@ -358,13 +363,13 @@ class Experiment(object):
                     idx = jns.index(jn)
                     cmd[jn] = ctrl[jn].compute(q_curr[jn], steps[count][idx],
                                                dq_curr[jn])
-
-                command = [steps[count][jns.index(jn)]
-                           for jn in self._rec_joint.get_header_cfg()[1:]]
-                self._pub_cfg_comm.publish(command=command)
-                command = [ctrl[jn].generated
-                           for jn in self._rec_joint.get_header_efft()[1:]]
-                self._pub_efft_gen.publish(command=command)
+                if self._joints:
+                    command = [steps[count][jns.index(jn)]
+                               for jn in self._rec_joint.get_header_cfg()[1:]]
+                    self._pub_cfg_comm.publish(command=command)
+                    command = [ctrl[jn].generated
+                               for jn in self._rec_joint.get_header_efft()[1:]]
+                    self._pub_efft_gen.publish(command=command)
 
                 self._limb.set_joint_torques(cmd)
 
