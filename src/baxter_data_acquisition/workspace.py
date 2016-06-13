@@ -25,12 +25,15 @@
 
 from collections import Sequence
 import numpy as np
+import rospy
+
+from visualization_msgs.msg import Marker, MarkerArray
 
 
 class Workspace(Sequence):
-    def __init__(self, r1=0.40, r2=0.80, v1=0.40, v2=0.40):
+    def __init__(self, r1=0.50, r2=0.90, min_z=-0.3, max_z=1.1):
         self._clusters = list()
-        self._cluster_workspace(r1, r2, v1, v2)
+        self._cluster_workspace(r1, r2, min_z=min_z, max_z=max_z)
 
     def __getitem__(self, item):
         return self._clusters[item]
@@ -38,7 +41,7 @@ class Workspace(Sequence):
     def __len__(self):
         return len(self._clusters)
 
-    def _cluster_workspace(self, r1, r2, v1, v2):
+    def _cluster_workspace(self, r1, r2, min_z, max_z):
         """ Cut the workspace of the baxter robot into several clusters.
         Two cylinders of radius r1 and r2, respectively, are placed around
         the origin of the robot's coordinate frame (oriented along the z-
@@ -46,27 +49,30 @@ class Workspace(Sequence):
         degrees, where 0 degrees is along the x-axis. The outer cylinder (r2)
         is intersected at [22.5, 67.5, ..., 360) degrees, where 0 degrees is
         along the x-axis.
-        A regular grid is created by combining these points with heights
-        [0, +-v1, +-2v1, ...] and [0, +-v2, +-2v2, ...], respectively.
+        A regular grid is created by combining these points with appropriate
+        heights.
         """
-        phi = np.arange(start=0, stop=2*np.pi, step=np.pi/4)
+        def approximate_circle(radius, phi):
+            return zip(radius*np.cos(phi), radius*np.sin(phi))
 
-        def grid(r):
-            return zip(r*np.cos(phi), r*np.sin(phi))
-
-        def mesh(r, v):
-            xy = grid(r)
-            xyz = list()
+        xyz = list()
+        # one cluster above head at maximal height
+        xyz.append((0.0, 0.0, max_z))
+        # one inner cylinder of clusters
+        phi1 = np.arange(start=0, stop=2*np.pi, step=np.pi/3)
+        xy = approximate_circle(radius=r1, phi=phi1)
+        d = float(max_z - min_z)/5.0
+        for z in np.arange(min_z+d, max_z-2*d+0.01, 2*d):
             for x, y in xy:
-                # TODO set proper upper value
-                for z in np.arange(0, 1.43, v):
-                    xyz.append((x, y, z))
-                # TODO set proper lower value
-                for z in np.arange(0, -0.92, -v):
-                    xyz.append((x, y, z))
-            return xyz
+                xyz.append((x, y, z))
+        # one outer cylinder of clusters
+        phi2 = np.arange(start=np.deg2rad(22.5), stop=2*np.pi, step=np.pi/4)
+        xy = approximate_circle(radius=r2, phi=phi2)
+        for z in np.arange(min_z, max_z-d+0.01, 2*d):
+            for x, y in xy:
+                xyz.append((x, y, z))
 
-        self._clusters = np.array(mesh(r1, v1) + mesh(r2, v2))
+        self._clusters = np.array(xyz)
 
     def cluster_position(self, position):
         """ Classify a given position according to the closest cluster in the
@@ -76,3 +82,31 @@ class Workspace(Sequence):
         """
         dists = np.linalg.norm(self._clusters - np.asarray(position), axis=1)
         return np.argmin(dists, axis=0)
+
+    def visualize_rviz(self):
+        """ Visualize the workspace cluster points as a RVIZ MarkerArray. """
+        topic = 'workspace_marker_array'
+        pub = rospy.Publisher(topic, MarkerArray, queue_size=100)
+        marker_array = MarkerArray()
+
+        while not rospy.is_shutdown() and pub.get_num_connections() < 1:
+            rospy.sleep(0.5)
+        for idx, cluster in enumerate(self._clusters):
+            marker = Marker()
+            marker.header.frame_id = "world"
+            marker.id = idx
+            marker.type = marker.SPHERE
+            marker.action = marker.ADD
+            marker.scale.x = 0.1
+            marker.scale.y = 0.1
+            marker.scale.z = 0.1
+            marker.color.a = 1.0
+            marker.color.r = 1.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.pose.orientation.w = 1.0
+            marker.pose.position.x = cluster[0]
+            marker.pose.position.y = cluster[1]
+            marker.pose.position.z = cluster[2]
+            marker_array.markers.append(marker)
+        pub.publish(marker_array)

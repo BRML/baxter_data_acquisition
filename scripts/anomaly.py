@@ -73,6 +73,9 @@ def main():
     parser.add_argument('-a', '--anomalies', required=False,
                         type=str, default='false', choices=['true', 'false'],
                         help='Whether there are anomalies in the data.')
+    parser.add_argument('-j', '--joints', required=False,
+                        type=str, default='true', choices=['true', 'false'],
+                        help='Whether joint data are to be recorded.')
     parser.add_argument('-i', '--images', required=False,
                         type=str, default='false', choices=['true', 'false'],
                         help='Whether images are to be recorded.')
@@ -106,6 +109,7 @@ def main():
     exp = Experiment(limb=args.limb, experiment=args.experiment,
                      number=args.number,
                      anomalies=as_boolean(args.anomalies),
+                     joints=as_boolean(args.joints),
                      images=as_boolean(args.images),
                      threed=as_boolean(args.threed), sim=sim)
     rospy.on_shutdown(exp.clean_shutdown)
