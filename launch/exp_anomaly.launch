@@ -3,7 +3,7 @@
 <launch>
     <arg name="gazebo" default="false"/>
 
-    <arg name="rec_joints" default="false"/>
+    <arg name="rec_joint" default="false"/>
     <arg name="rec_camera" default="false"/>
     <arg name="rec_depth" default="false"/>
     <arg name="experiment" default="fixed"/>
@@ -20,7 +20,7 @@
 
     <!-- Start recorder servers -->
     <include file="$(find baxter_data_acquisition)/launch/recorder.launch">
-        <arg name="joint" value="$(arg rec_joints"/>
+        <arg name="joint" value="$(arg rec_joint)"/>
         <arg name="camera" value="$(arg rec_camera)"/>
         <arg name="kinect" value="$(arg rec_depth)"/>
         <arg name="senz3d" value="false"/>
@@ -32,6 +32,6 @@
           required="true" respawn="false" output="screen" cwd="node"
           args="--limb left --experiment $(arg experiment)
                 --number $(arg number) --anomalies $(arg anomalies)
-                --joints $(arg rec_joints)
+                --joints $(arg rec_joint)
                 --images $(arg rec_camera) --threed $(arg rec_depth)"/>
 </launch>
