@@ -124,8 +124,6 @@ class Experiment(object):
 
         # robot workspace using default parameters
         self._ws = Workspace()
-        print 'visualizing %d cluster' % len(self._ws)
-        self._ws.visualize_rviz()
 
         rospy.loginfo("Getting robot state ... ")
         self._rs = baxter_interface.RobotEnable(CHECK_VERSION)
