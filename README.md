@@ -132,7 +132,7 @@ will be installed separately.
 ```bash
 $ cd ~/ros_baxter_daq_ws/src
 $ wstool init .
-$ wstool merge https://gist.githubusercontent.com/lude-ma/4de2ab1e0d4f632fba1a75d901db8aba/raw/671eedbac5bb868c1907abf5bcade0d44bea712d/baxter_daq.rosinstall
+$ wstool merge https://raw.githubusercontent.com/lude-ma/baxter_rosinstall/master/baxter_daq.rosinstall
 $ wstool update
 $ cd iai_kinect2
 $ source /opt/ros/indigo/setup.bash
