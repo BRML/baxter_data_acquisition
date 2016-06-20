@@ -102,6 +102,26 @@ $ pip install h5py
 $ sudo apt-get install libsnappy-dev
 $ pip install python-snappy
 ```
+To install the Microsoft Kinect V2 for Linux we need the 
+[libfreenect2](https://github.com/OpenKinect/libfreenect2/blob/master/README.md#linux) 
+library, which we will build from source and install into ~/freenect2:
+```bash
+$ sudo apt-get install libturbojpeg libopenni2-dev
+$ git clone https://github.com/OpenKinect/libfreenect2.git ~/libfreenect2
+$ cd ~/libfreenect2/depends
+$ ./download_debs_trusty.sh
+$ sudo dpkg -i debs/libglfw3*deb
+$ sudo apt-get install -f
+cd ~/libfreenect2
+mkdir build
+cd build
+cmake .. -DENABLE_CXX11=ON -DCMAKE_INSTALL_PREFIX=$HOME/freenect2
+make
+make install
+sudo cp ../platform/linux/udev/90-kinect2.rules /etc/udev/rules.d/
+```
+To verify the installation, plug in the Kinect V2 into an USB 3 port and
+run the `./bin/Protonect` test program.
 
 ### Step 5: Install this package and its dependencies
 Using the [wstool](http://wiki.ros.org/wstool) workspace tool, you will 
