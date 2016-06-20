@@ -12,7 +12,7 @@
     <!-- Start simulation environment -->
     <include if="$(arg gazebo)"
              file="$(find baxter_data_acquisition)/launch/simulation.launch">
-        <arg name="depth_internal" value="$(arg rec_depth)"/>
+        <arg name="depth_internal" value="false"/>
         <arg name="depth_external" value="$(arg rec_depth)"/>
     </include>
 
