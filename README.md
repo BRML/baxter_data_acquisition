@@ -127,14 +127,19 @@ run the `./bin/Protonect` test program.
 Using the [wstool](http://wiki.ros.org/wstool) workspace tool, you will 
 checkout all required Github repositories into your ROS workspace source 
 directory.
+The [ROS bridge for the Kinect V2](https://github.com/code-iai/iai_kinect2#install) 
+will be installed separately.
 ```bash
 $ cd ~/ros_baxter_daq_ws/src
 $ wstool init .
 $ wstool merge https://gist.githubusercontent.com/lude-ma/4de2ab1e0d4f632fba1a75d901db8aba/raw/671eedbac5bb868c1907abf5bcade0d44bea712d/baxter_daq.rosinstall
 $ wstool update
+$ git clone https://github.com/code-iai/iai_kinect2.git
+$ cd iai_kinect2
+$ rosdep install -r --from-paths .
 $ source /opt/ros/indigo/setup.bash
 $ cd ~/ros_baxter_daq_ws
-$ catkin_make
+$ catkin_make -DCMAKE_BUILD_TYPE="Release"
 $ catkin_make install
 ```
 
