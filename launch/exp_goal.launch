@@ -15,6 +15,9 @@
         <arg name="depth_internal" value="false"/>
         <arg name="depth_external" value="$(arg rec_depth)"/>
     </include>
+    <!-- Start KinectV2 bridge, if not in simulation -->
+    <include unless="$(arg gazebo)"
+             file="$(find kinect2_bridge)/launch/kinect2_bridge.launch"/>
 
     <!-- Start recorder servers -->
     <include file="$(find baxter_data_acquisition)/launch/recorder.launch">
