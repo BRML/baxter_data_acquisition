@@ -102,19 +102,43 @@ $ pip install h5py
 $ sudo apt-get install libsnappy-dev
 $ pip install python-snappy
 ```
+To install the Microsoft Kinect V2 for Linux we need the 
+[libfreenect2](https://github.com/OpenKinect/libfreenect2/blob/master/README.md#linux) 
+library, which we will build from source and install into ~/freenect2:
+```bash
+$ sudo apt-get install libturbojpeg libopenni2-dev
+$ git clone https://github.com/OpenKinect/libfreenect2.git ~/libfreenect2
+$ cd ~/libfreenect2/depends
+$ ./download_debs_trusty.sh
+$ sudo dpkg -i debs/libglfw3*deb
+$ sudo apt-get install -f
+cd ~/libfreenect2
+mkdir build
+cd build
+cmake .. -DENABLE_CXX11=ON -DCMAKE_INSTALL_PREFIX=$HOME/freenect2
+make
+make install
+sudo cp ../platform/linux/udev/90-kinect2.rules /etc/udev/rules.d/
+```
+To verify the installation, plug in the Kinect V2 into an USB 3 port and
+run the `./bin/Protonect` test program.
 
 ### Step 5: Install this package and its dependencies
 Using the [wstool](http://wiki.ros.org/wstool) workspace tool, you will 
 checkout all required Github repositories into your ROS workspace source 
 directory.
+The [ROS bridge for the Kinect V2](https://github.com/code-iai/iai_kinect2#install) 
+will be installed separately.
 ```bash
 $ cd ~/ros_baxter_daq_ws/src
 $ wstool init .
-$ wstool merge https://gist.githubusercontent.com/lude-ma/4de2ab1e0d4f632fba1a75d901db8aba/raw/671eedbac5bb868c1907abf5bcade0d44bea712d/baxter_daq.rosinstall
+$ wstool merge https://raw.githubusercontent.com/lude-ma/baxter_rosinstall/master/baxter_daq.rosinstall
 $ wstool update
+$ cd iai_kinect2
 $ source /opt/ros/indigo/setup.bash
+$ rosdep install -r --from-paths .
 $ cd ~/ros_baxter_daq_ws
-$ catkin_make
+$ catkin_make -DCMAKE_BUILD_TYPE="Release"
 $ catkin_make install
 ```
 

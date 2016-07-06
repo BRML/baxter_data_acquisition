@@ -31,7 +31,7 @@
     <xacro:if value="$(arg depth_external)">
         <xacro:include filename="$(find kinect_description)/urdf/kinect/kinect.xacro"/>
         <xacro:sensor_kinect prefix="/"
-                             name="kinect"
+                             name="kinect2"
                              parent="base"
                              cam_px="2.5"
                              cam_py="0.0"

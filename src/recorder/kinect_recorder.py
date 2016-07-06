@@ -36,10 +36,10 @@ class KinectRecorder(object):
         :return:
         """
         self._rec_rgb = CameraRecorder()
-        self._rec_rgb.topic = '/kinect/rgb/image'
+        self._rec_rgb.topic = '/kinect2/hd/image_color_rect'
 
         self._rec_depth = DepthRecorder()
-        self._rec_depth.topic = '/kinect/depth/image'
+        self._rec_depth.topic = '/kinect2/sd/image_depth_rect'
 
     def clean_shutdown(self):
         """ Clean shutdown of the Kinect recorder. """
