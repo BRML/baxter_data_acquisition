@@ -28,13 +28,16 @@
 import argparse
 import datetime
 import os
+import sys
 import rospkg
-
 import rospy
 
 from baxter_data_acquisition.misc import as_boolean
 from baxter_data_acquisition.simulation import sim_or_real
 from experiments.goal import Experiment
+
+from baxter_analysis.util.logger import SimpleLogger
+from baxter_analysis.util.gitlogger import git_logger
 
 
 def main():
@@ -89,6 +92,15 @@ def main():
         os.makedirs(filepath)
     filename = os.path.join(filepath, outfile)
 
+    modules_to_version = ['ros_baxter_data_acquisition', 'baxter_analysis',
+                          'rospkg', 'rospy']
+    logger = SimpleLogger(filename + '_console')
+    stdout = sys.stdout
+    stderr = sys.stderr
+    sys.stdout = logger
+    sys.stderr = logger
+    git_logger(modules=modules_to_version, log_filename=filename + '_version')
+
     print 'Initializing node ...'
     rospy.init_node('goal_data', anonymous=True)
 
@@ -101,6 +113,8 @@ def main():
     exp.execute(filename)
 
     print '\nDone.'
+    sys.stdout = stdout
+    sys.stderr = stderr
 
 if __name__ == '__main__':
     main()
