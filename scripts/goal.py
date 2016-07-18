@@ -100,6 +100,8 @@ def main():
     sys.stdout = logger
     sys.stderr = logger
     git_logger(modules=modules_to_version, log_filename=filename + '_version')
+    print '\nStarting experiment at {}.'.format(
+        datetime.datetime.now().strftime(format='%Y/%m/%d, %H:%M'))
 
     print 'Initializing node ...'
     rospy.init_node('goal_data', anonymous=True)
@@ -112,7 +114,8 @@ def main():
     rospy.on_shutdown(exp.clean_shutdown)
     exp.execute(filename)
 
-    print '\nDone.'
+    print '\nFinished experiment at {}.'.format(
+        datetime.datetime.now().strftime(format='%Y/%m/%d, %H:%M'))
     sys.stdout = stdout
     sys.stderr = stderr
 
