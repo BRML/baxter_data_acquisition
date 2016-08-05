@@ -5,8 +5,8 @@ The framework heavily builds upon the
 [Baxter SDK](https://github.com/RethinkRobotics) and depends on the 
 [depth_sensors](https://github.com/BRML/depth_sensors.git) ROS package as 
 well as customized versions of 
-[baxter_interface](https://github.com/lude-ma/baxter_interface.git) and 
-[baxter_common](https://github.com/lude-ma/baxter_common.git) from Rethink 
+[baxter_interface](https://github.com/BRML/baxter_interface.git) and
+[baxter_common](https://github.com/BRML/baxter_common.git) from Rethink
 Robotics.
 
 
@@ -132,7 +132,7 @@ will be installed separately.
 ```bash
 $ cd ~/ros_baxter_daq_ws/src
 $ wstool init .
-$ wstool merge https://raw.githubusercontent.com/lude-ma/baxter_rosinstall/master/baxter_daq.rosinstall
+$ wstool merge https://raw.githubusercontent.com/BRML/baxter_rosinstall/master/baxter_daq.rosinstall
 $ wstool update
 $ cd iai_kinect2
 $ source /opt/ros/indigo/setup.bash
