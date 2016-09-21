@@ -124,6 +124,9 @@ class DepthRecorder(object):
         # Scale float32 image to uint16 image.
         # '{min, max}_cutoff' are the minimum and maximum range of the depth
         # sensor of the Kinect V2.
+        # TODO This is wrong if img_float32 is not in the range of [0.5, 4.5]
+        # TODO Converting values > 2**16 to uint16 overflows and would explain the depth images
+        # TODO 65535 should be 2**16
         min_cutoff = 0.5
         max_cutoff = 4.5
         img_uint16 = 65535*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
