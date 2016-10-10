@@ -25,6 +25,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import cv2
 import cv_bridge
 import numpy as np
 import rospy
@@ -117,23 +118,30 @@ class DepthRecorder(object):
         self._fp_ts.flush()
         # add frame to binary file
         try:
-            img_float32 = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
+            img = cv_bridge.CvBridge().imgmsg_to_cv2(imgmsg)
         except cv_bridge.CvBridgeError as e:
             rospy.logfatal("'%s' Failed to convert ROS image message!" % self)
             raise e
-        # Scale float32 image to uint16 image.
-        # '{min, max}_cutoff' are the minimum and maximum range of the depth
-        # sensor of the Kinect V2.
-        # TODO This is wrong if img_float32 is not in the range of [0.5, 4.5]
-        # TODO Converting values > 2**16 to uint16 overflows and would explain the depth images
-        # TODO 65535 should be 2**16
-        min_cutoff = 0.5
-        max_cutoff = 4.5
-        img_uint16 = 65535*(img_float32 - min_cutoff)/(max_cutoff - min_cutoff)
-        img_uint16 = img_uint16.astype(np.uint16, copy=False)
+        if img.dtype == np.float32:
+            # Is simulated data
+            mask = np.isnan(img)
+            if mask.any():
+                # In simulation, the background has NaN depth values.
+                # We replace them with 4.5 m, the maximum value specified for
+                # the maximum distance of the simulated Kinect V2.
+                rospy.logdebug("There was at least one NaN in the depth image. " +
+                              "I replaced all occurrences with 4.5 m.")
+                img.flags.writeable = True
+                img[mask] = 4.5
+                # We now map the float values to the same uint16 range the
+                # libfreenect2 and iai_kinect2 frameworks and the real
+                # Kinect V2 give.
+                img = 12000*(img/img.max())
+                img = img.astype(np.uint16, copy=False)
+        assert img.dtype == np.uint16
 
         # compress image with snappy
-        img_comp = snappy.compress(img_uint16)
+        img_comp = snappy.compress(img)
         # write number of bytes of compressed image
         nr_bytes = struct.pack('<L', len(img_comp))
         self._fp_d.write(nr_bytes)
