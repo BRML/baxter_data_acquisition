@@ -127,16 +127,15 @@ class DepthRecorder(object):
             mask = np.isnan(img)
             if mask.any():
                 # In simulation, the background has NaN depth values.
-                # We replace them with 4.5 m, the maximum value specified for
-                # the maximum distance of the simulated Kinect V2.
+                # We replace them with 0 m, similar to what the Kinect V1 did.
+                # See https://msdn.microsoft.com/en-us/library/jj131028.aspx.
                 rospy.logdebug("There was at least one NaN in the depth image. " +
-                              "I replaced all occurrences with 4.5 m.")
+                              "I replaced all occurrences with 0.0 m.")
                 img.flags.writeable = True
-                img[mask] = 4.5
-                # We now map the float values to the same uint16 range the
-                # libfreenect2 and iai_kinect2 frameworks and the real
-                # Kinect V2 give.
-                img = 12000*(img/img.max())
+                img[mask] = 0.0
+                # We now map the float values in meters to uint16 values in mm
+                # as provided by the libfreenect2 library and Kinect SDK.
+                img *= 1000.0
                 img = img.astype(np.uint16, copy=False)
         assert img.dtype == np.uint16
 
