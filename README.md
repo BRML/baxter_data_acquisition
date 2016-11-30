@@ -22,6 +22,28 @@ All experiments can be run both on the real robot as well as in the
 [Gazebo](http://gazebosim.org/)-powered 
 [Baxter simulator](http://sdk.rethinkrobotics.com/wiki/Baxter_Simulator).
 
+
+The experiments in this package have been used to record data for the following publications:
+- Z. A. Milacski, M. Ludersdorfer, P. van der Smagt and A. Lorincz: [Robust Detection of Anomalies via Sparse Methods](https://www.researchgate.net/publication/281347922_Robust_Detection_of_Anomalies_via_Sparse_Methods), ICONIP, 2015
+- M. Soelch, J. Bayer, M. Ludersdorfer and P. van der Smagt: [Variational Inference for On-line Anomaly Detection in High-Dimensional Time Series](https://arxiv.org/abs/1602.07109), ICML (workshop track), 2016
+
+## License
+
+We publish the Baxter data acquisition framework under a BSD license, hoping that it might be useful for others as well.
+The license text can be found in the LICENSE file and can be obtained from the [Open Source Initiative](https://opensource.org/licenses/BSD-2-Clause).
+
+If you find our Baxter data acquisition framework useful in your work, please consider citing it:
+```
+@misc{hbcf2016,
+    author={Ludersdorfer, Marvin},
+    title={{The Baxter data acquisition framework}},
+    organization={{Biomimetic Robotics and Machine Learning laboratory}},
+    address={{fortiss GmbH}},
+    year={2015--2016},
+    howpublished={\url{https://github.com/BRML/baxter\_data\_acquisition}},
+    note={Accessed November 30, 2016}
+}
+```
 ### Structure of the repository
 ```bash
 .
@@ -49,13 +71,15 @@ All experiments can be run both on the real robot as well as in the
 
 ## How to install and use
 The Baxter data acquisition software is implemented as a ROS package.
-It requires a development workstation with 
+It has been tested on a development workstation with 
 [Ubuntu 14.04](http://releases.ubuntu.com/14.04/) and 
-[ROS Indigo](http://wiki.ros.org/indigo) installed.
+[ROS Indigo](http://wiki.ros.org/indigo).
 
-> Note: If you have Ubuntu, ROS and and the Baxter SDK dependencies already 
+> Note 1: If you have Ubuntu, ROS and and the Baxter SDK dependencies already 
 > installed, you only need to perform steps 3, 5 and 6 to clone, install and 
 > setup the Baxter data acquisition framework!
+
+> Note 2: The following instructions are adapted in parts from [here](http://sdk.rethinkrobotics.com/wiki/Workstation_Setup).
 
 ### Step 1: Install Ubuntu
 Follow the standard Ubuntu Installation Instructions for 14.04 (Desktop).
@@ -273,8 +297,6 @@ pops up, do (see [link](http://answers.ros.org/question/199401/problem-with-indi
 ```bash
 $ export LC_NUMERIC=C
 ```
-- In some cases using the debug mode makes Gazebo more reliable, see 
-[link](http://answers.gazebosim.org/question/5115/on-startup-of-gazebo-i-get-intermittent-error/).
-To start Gazebo in debug mode, run 
-`roslaunch baxter_data_acquisition simulation.launch debug:=true` in a SDK 
-shell.
+
+## Acknowledgements
+We thank Darjus Hosszejni from the [Neural Information Processing Group](http://nipg.inf.elte.hu/) at ELTE for his help and many valuable discussions.
